@@ -1,0 +1,547 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-cream: var(--cream);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  color-scheme: dark;
+  /* Navy blue deep base */
+  --background: #061A2F;
+  --foreground: #F5F5F5;
+  --card: #09243D;
+  --card-foreground: #F5F5F5;
+  --popover: #0D3150;
+  --popover-foreground: #F5F5F5;
+  /* Gold as primary */
+  --primary: #D4AF37;
+  --primary-foreground: #000000;
+  --secondary: #0D3150;
+  --secondary-foreground: #F5F5F5;
+  --muted: #09243D;
+  --muted-foreground: #B8B8B8;
+  --accent: #E8C766;
+  --accent-foreground: #000000;
+  --destructive: #DC2626;
+  --border: #D4AF37;
+  --input: #0D3150;
+  --ring: #D4AF37;
+  --chart-1: #D4AF37;
+  --chart-2: #E8C766;
+  --chart-3: #0D3150;
+  --chart-4: #09243D;
+  --chart-5: #061A2F;
+  --radius: 0.5rem;
+  /* Custom brand tokens */
+  --gold: #D4AF37;
+  --gold-soft: #E8C766;
+  --gold-metallic: #C9A227;
+  --cream: #F5F5F5;
+  --navy-deep: #061A2F;
+  --navy-dark: #09243D;
+  --navy-sophisticated: #0D3150;
+  --sidebar: #09243D;
+  --sidebar-foreground: #F5F5F5;
+  --sidebar-primary: #D4AF37;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #0D3150;
+  --sidebar-accent-foreground: #F5F5F5;
+  --sidebar-border: #D4AF37;
+  --sidebar-ring: #D4AF37;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #061A2F;
+  --foreground: #F5F5F5;
+  --card: #09243D;
+  --card-foreground: #F5F5F5;
+  --popover: #0D3150;
+  --popover-foreground: #F5F5F5;
+  --primary: #D4AF37;
+  --primary-foreground: #000000;
+  --secondary: #0D3150;
+  --secondary-foreground: #F5F5F5;
+  --muted: #09243D;
+  --muted-foreground: #B8B8B8;
+  --accent: #E8C766;
+  --accent-foreground: #000000;
+  --destructive: #DC2626;
+  --border: #D4AF37;
+  --input: #0D3150;
+  --ring: #D4AF37;
+  --chart-1: #D4AF37;
+  --chart-2: #E8C766;
+  --chart-3: #0D3150;
+  --chart-4: #09243D;
+  --chart-5: #061A2F;
+  --sidebar: #09243D;
+  --sidebar-foreground: #F5F5F5;
+  --sidebar-primary: #D4AF37;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #0D3150;
+  --sidebar-accent-foreground: #F5F5F5;
+  --sidebar-border: #D4AF37;
+  --sidebar-ring: #D4AF37;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    color-scheme: dark;
+    --background: #061A2F;
+    --foreground: #F5F5F5;
+    --card: #09243D;
+    --card-foreground: #F5F5F5;
+    --popover: #0D3150;
+    --popover-foreground: #F5F5F5;
+    --primary: #D4AF37;
+    --primary-foreground: #000000;
+    --secondary: #0D3150;
+    --secondary-foreground: #F5F5F5;
+    --muted: #09243D;
+    --muted-foreground: #B8B8B8;
+    --accent: #E8C766;
+    --accent-foreground: #000000;
+    --destructive: #DC2626;
+    --border: #D4AF37;
+    --input: #0D3150;
+    --ring: #D4AF37;
+    --chart-1: #D4AF37;
+    --chart-2: #E8C766;
+    --chart-3: #0D3150;
+    --chart-4: #09243D;
+    --chart-5: #061A2F;
+    --sidebar: #09243D;
+    --sidebar-foreground: #F5F5F5;
+    --sidebar-primary: #D4AF37;
+    --sidebar-primary-foreground: #000000;
+    --sidebar-accent: #0D3150;
+    --sidebar-accent-foreground: #F5F5F5;
+    --sidebar-border: #D4AF37;
+    --sidebar-ring: #D4AF37;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .text-gold-gradient {
+    background: linear-gradient(
+      100deg,
+      #C9A227 0%,
+      #E8C766 30%,
+      #D4AF37 55%,
+      #F0D860 75%,
+      #C9A227 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .gold-hairline {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--gold) 20%,
+      var(--gold-soft) 50%,
+      var(--gold) 80%,
+      transparent
+    );
+  }
+
+  .bg-radial-navy {
+    background:
+      radial-gradient(
+        ellipse 80% 60% at 50% 0%,
+        #0D3150 0%,
+        transparent 70%
+      ),
+      var(--background);
+  }
+
+  .bg-navy-gradient {
+    background: linear-gradient(
+      180deg,
+      #061A2F 0%,
+      #09243D 50%,
+      #0D3150 100%
+    );
+  }
+
+  .ornament-star {
+    width: 12px;
+    height: 12px;
+    position: relative;
+  }
+
+  .ornament-star::before,
+  .ornament-star::after {
+    content: '';
+    position: absolute;
+    background: var(--gold);
+  }
+
+  .ornament-star::before {
+    width: 12px;
+    height: 1px;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+  }
+
+  .ornament-star::after {
+    width: 1px;
+    height: 12px;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+  }
+
+  .ornament-diamond {
+    width: 8px;
+    height: 8px;
+    background: var(--gold);
+    transform: rotate(45deg);
+  }
+
+  /* Animation utilities */
+  .animate-slide-left {
+    animation: slideInLeft 1s ease-out forwards;
+  }
+
+  .animate-slide-right {
+    animation: slideInRight 1s ease-out forwards;
+  }
+
+  .animate-fade-up {
+    animation: fadeUp 1s ease-out forwards;
+  }
+
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-100px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(100px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Splash screen animations */
+  .-rotate-x-180 {
+    transform: rotateX(180deg);
+  }
+
+  .rotate-x-0 {
+    transform: rotateX(0deg);
+  }
+
+  @keyframes envelopeOpen {
+    0% {
+      transform: rotateX(0deg);
+    }
+    100% {
+      transform: rotateX(180deg);
+    }
+  }
+
+  @keyframes paperSlide {
+    0% {
+      transform: translateY(0) scale(1);
+      opacity: 0;
+    }
+    50% {
+      transform: translateY(-50px) scale(1.1);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-100px) scale(1.5);
+      opacity: 0;
+    }
+  }
+
+  @keyframes splashFade {
+    0% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+
+  .animate-envelope-open {
+    animation: envelopeOpen 1s ease-in-out forwards;
+  }
+
+  .animate-paper-slide {
+    animation: paperSlide 1.5s ease-in-out forwards;
+  }
+
+  .animate-splash-fade {
+    animation: splashFade 0.5s ease-in-out forwards;
+  }
+
+  /* Splash screen envelope styles */
+  .splash-wrapper {
+    height: 200px;
+    width: 300px;
+    background-color: #09243D;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    z-index: 0;
+  }
+
+  .splash-lid {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    left: 0;
+    border-right: 150px solid transparent;
+    border-bottom: 100px solid transparent;
+    border-left: 150px solid transparent;
+    transform-origin: top;
+    transition: transform 0.5s ease-in-out;
+  }
+
+  /* Lid when closed */
+  .splash-lid-one {
+    border-top: 100px solid #0D3150;
+    transform: rotateX(0deg);
+    z-index: 3;
+    transition-delay: 0.75s;
+  }
+
+  .splash-lid-one-open {
+    transform: rotateX(90deg);
+    transition-delay: 0s;
+  }
+
+  /* Lid when opened */
+  .splash-lid-two {
+    border-top: 100px solid #09243D;
+    transform: rotateX(90deg);
+    z-index: 1;
+    transition-delay: 0.5s;
+  }
+
+  .splash-lid-two-open {
+    transform: rotateX(180deg);
+    transition-delay: 0.25s;
+  }
+
+  .splash-envelope {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    left: 0;
+    border-top: 100px solid transparent;
+    border-right: 150px solid #D4AF37;
+    border-bottom: 100px solid #D4AF37;
+    border-left: 150px solid #C9A227;
+    z-index: 3;
+  }
+
+  .splash-letter {
+    position: absolute;
+    top: 10px;
+    width: 80%;
+    height: 80%;
+    background: linear-gradient(135deg, #FFFEF8 0%, #F5F0E6 50%, #F0E6D8 100%);
+    border-radius: 4px;
+    z-index: 2;
+    transition: 0.8s ease-in-out;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(212, 175, 55, 0.4);
+    overflow: hidden;
+  }
+
+  .splash-letter-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .splash-corner {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(212, 175, 55, 0.5);
+  }
+
+  .splash-corner-top-left {
+    top: 8px;
+    left: 8px;
+    border-right: none;
+    border-bottom: none;
+  }
+
+  .splash-corner-top-right {
+    top: 8px;
+    right: 8px;
+    border-left: none;
+    border-bottom: none;
+  }
+
+  .splash-corner-bottom-left {
+    bottom: 8px;
+    left: 8px;
+    border-right: none;
+    border-top: none;
+  }
+
+  .splash-corner-bottom-right {
+    bottom: 8px;
+    right: 8px;
+    border-left: none;
+    border-top: none;
+  }
+
+  .splash-inner-border {
+    position: absolute;
+    inset: 12px;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 2px;
+  }
+
+  .splash-header-decoration,
+  .splash-footer-decoration {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0;
+  }
+
+  .splash-line {
+    width: 24px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.6), transparent);
+  }
+
+  .splash-diamond {
+    width: 8px;
+    height: 8px;
+    background: rgba(212, 175, 55, 0.5);
+    transform: rotate(45deg);
+  }
+
+  .splash-logo {
+    margin: 12px 0;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  }
+
+  .splash-names {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0;
+  }
+
+  .splash-name-main {
+    font-family: var(--font-serif);
+    font-size: 1.5rem;
+    font-weight: 300;
+    background: linear-gradient(135deg, #C9A227 0%, #D4AF37 50%, #E8C766 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: 0.1em;
+  }
+
+  .splash-ampersand {
+    font-family: var(--font-serif);
+    font-size: 1.2rem;
+    color: rgba(212, 175, 55, 0.7);
+    font-style: italic;
+  }
+
+  .splash-letter-out {
+    transform: translateY(-80px);
+    transition-delay: 0.5s;
+  }
+}
