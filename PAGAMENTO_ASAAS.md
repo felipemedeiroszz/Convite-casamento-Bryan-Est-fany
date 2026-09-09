@@ -38,7 +38,7 @@ ASAAS_WEBHOOK_SECRET=your_webhook_secret_for_verification
 2. Obtenha sua API Key nas configurações da conta
 3. Configure o webhook no painel da ASAAS:
    - URL: `https://seu-dominio.com/api/webhook/asaas`
-   - Eventos: `PAYMENT_CONFIRMED`, `PAYMENT_DELETED`, `PAYMENT_CANCELLED`, `PAYMENT_EXPIRED`
+   - Eventos: `PAYMENT_CONFIRMED`, `PAYMENT_DELETED`, `PAYMENT_OVERDUE`, `PAYMENT_BANK_SLIP_CANCELLED`
    - Autenticação: Use o `ASAAS_WEBHOOK_SECRET`
 
 ### 3. Atualizar Schema do Banco de Dados

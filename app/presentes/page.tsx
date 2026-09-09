@@ -309,33 +309,78 @@ export default function GiftsPage() {
         {/* Gifts Tab */}
         {activeTab === 'gifts' && (
           <div className="mt-12">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {gifts.map((gift) => (
                 <div
                   key={gift.id}
-                  className="rounded-lg border border-gold/30 bg-[#09243D]/50 p-6 backdrop-blur-sm shadow-lg shadow-gold/10 transition-all hover:shadow-gold/20 hover:scale-[1.02]"
+                  className="group relative overflow-hidden rounded-xl border border-gold/30 bg-[#09243D]/70 backdrop-blur-sm shadow-lg shadow-gold/10 transition-all duration-300 hover:shadow-gold/30 hover:scale-[1.03] hover:border-gold/50"
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-gold bg-[#061A2F] shadow-lg shadow-gold/20">
-                    <Gift className="h-6 w-6 text-gold" />
+                  {/* Image Section */}
+                  <div className="relative h-48 overflow-hidden bg-[#061A2F]">
+                    {gift.imagem_url ? (
+                      <img
+                        src={gift.imagem_url}
+                        alt={gift.nome}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <Gift className="h-16 w-16 text-gold/30" />
+                      </div>
+                    )}
+                    {/* Overlay gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#09243D] via-transparent to-transparent" />
+                    
+                    {/* Gift icon overlay */}
+                    <div className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full border border-gold/50 bg-[#061A2F]/80 backdrop-blur-sm shadow-lg">
+                      <Gift className="h-5 w-5 text-gold" />
+                    </div>
                   </div>
-                  <h3 className="mt-4 font-serif text-lg text-gold-gradient">
-                    {gift.nome}
-                  </h3>
-                  <p className="mt-2 font-sans text-sm text-cream/80 leading-relaxed">
-                    {gift.descricao}
-                  </p>
-                  <div className="mt-4 flex items-center justify-between">
-                    <span className="font-serif text-xl text-gold">
-                      R$ {gift.valor.toFixed(2)}
-                    </span>
-                    <button
-                      onClick={() => handleGiftPayment(gift)}
-                      disabled={loading}
-                      className="px-4 py-2 rounded-lg bg-gold/20 border border-gold/50 text-gold font-sans text-xs uppercase tracking-[0.2em] hover:bg-gold/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loading ? 'Processando...' : 'Presentear'}
-                    </button>
+
+                  {/* Content Section */}
+                  <div className="p-6">
+                    <h3 className="font-serif text-xl font-semibold text-gold-gradient leading-tight">
+                      {gift.nome}
+                    </h3>
+                    
+                    <p className="mt-3 font-sans text-sm text-cream/80 leading-relaxed line-clamp-2">
+                      {gift.descricao}
+                    </p>
+
+                    <div className="mt-6 flex items-center justify-between border-t border-gold/20 pt-4">
+                      <div>
+                        <p className="font-sans text-xs uppercase tracking-[0.2em] text-gold/70">
+                          Valor
+                        </p>
+                        <p className="font-serif text-2xl font-semibold text-gold">
+                          R$ {gift.valor.toFixed(2)}
+                        </p>
+                      </div>
+                      
+                      <button
+                        onClick={() => handleGiftPayment(gift)}
+                        disabled={loading}
+                        className="group/btn relative overflow-hidden rounded-lg bg-gold/20 px-5 py-3 border border-gold/50 text-gold font-sans text-xs uppercase tracking-[0.2em] transition-all hover:bg-gold/30 hover:border-gold disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="relative z-10 flex items-center gap-2">
+                          {loading ? (
+                            <>
+                              <Clock className="h-4 w-4 animate-spin" />
+                              Processando...
+                            </>
+                          ) : (
+                            <>
+                              <Heart className="h-4 w-4 transition-transform group-hover/btn:scale-110" />
+                              Presentear
+                            </>
+                          )}
+                        </span>
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Hover effect border */}
+                  <div className="absolute inset-0 rounded-xl border-2 border-gold/0 transition-all duration-300 group-hover:border-gold/30 pointer-events-none" />
                 </div>
               ))}
             </div>

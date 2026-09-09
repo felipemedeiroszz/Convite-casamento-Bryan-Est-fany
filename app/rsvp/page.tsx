@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { CheckCircle2 } from 'lucide-react'
+import { CheckCircle2, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
@@ -31,6 +31,7 @@ export default function RsvpPage() {
   const [loading, setLoading] = useState(false)
   const [useGuestList, setUseGuestList] = useState(true)
   const [guestName, setGuestName] = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
     fetchGuests()
@@ -45,7 +46,6 @@ export default function RsvpPage() {
         return
       }
       const data = await response.json()
-      // Only show guests that are not confirmed
       const availableGuests = data.filter((g: Guest) => g.status !== 'confirmed')
       setGuests(availableGuests)
       if (availableGuests.length === 0) {
@@ -58,35 +58,53 @@ export default function RsvpPage() {
   }
 
   useEffect(() => {
-    // Update companions when count changes
-    const newCompanions: Companion[] = []
-    for (let i = 0; i < companionCount; i++) {
-      const existing = companions[i]
-      newCompanions.push({
-        id: existing?.id || `comp-${i}`,
-        guest_id: existing?.guest_id,
-        nome: existing?.nome || '',
-        status: existing?.status || 'pending'
-      })
-    }
-    setCompanions(newCompanions)
+    setCompanions(prev => {
+      const result: Companion[] = []
+      for (let i = 0; i < companionCount; i++) {
+        const existing = prev[i]
+        result.push({
+          id: existing?.id || `comp-${i}-${Date.now()}`,
+          guest_id: existing?.guest_id,
+          nome: existing?.nome || '',
+          status: existing?.status || 'confirmed'
+        })
+      }
+      return result
+    })
   }, [companionCount])
 
   const handleCompanionChange = (index: number, field: keyof Companion, value: string) => {
-    const updated = [...companions]
-    updated[index] = { ...updated[index], [field]: value }
-    setCompanions(updated)
+    setCompanions(prev => {
+      const updated = prev.map((c, i) => i === index ? { ...c, [field]: value } : c)
+      return updated
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setErrorMsg('')
 
     try {
-      const guestId = useGuestList ? selectedGuestId : undefined
-      const nome = useGuestList 
+      const guestId = useGuestList ? selectedGuestId || undefined : undefined
+      const nome = useGuestList
         ? (guests.find(g => g.id === selectedGuestId)?.nome_completo || '')
-        : guestName
+        : guestName.trim()
+
+      if (!nome) {
+        setErrorMsg('Por favor, informe seu nome.')
+        setLoading(false)
+        return
+      }
+
+      for (let i = 0; i < companions.length; i++) {
+        const comp = companions[i]
+        if (!comp.nome.trim()) {
+          setErrorMsg(`Por favor, informe o nome do acompanhante ${i + 1}.`)
+          setLoading(false)
+          return
+        }
+      }
 
       const response = await fetch('/api/rsvp', {
         method: 'POST',
@@ -103,22 +121,16 @@ export default function RsvpPage() {
 
       if (response.ok) {
         setSubmitted(true)
-        // Update guest status to confirmed only if using guest list
-        if (useGuestList && selectedGuestId) {
-          await fetch(`/api/guests/${selectedGuestId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: willAttend ? 'confirmed' : 'declined' })
-          })
-        }
-        
-        // Redirect to gifts page after successful submission
         setTimeout(() => {
           router.push('/presentes')
         }, 2000)
+      } else {
+        const err = await response.json().catch(() => null)
+        setErrorMsg(err?.error || 'Erro ao enviar. Tente novamente.')
       }
     } catch (error) {
       console.error('Error submitting RSVP:', error)
+      setErrorMsg('Erro de conexão. Verifique sua internet e tente novamente.')
     } finally {
       setLoading(false)
     }
@@ -305,63 +317,78 @@ export default function RsvpPage() {
                             htmlFor={`companion-${index}`}
                             className="mb-2 block font-sans text-xs uppercase tracking-[0.15em] text-cream/80"
                           >
-                            Nome do acompanhante {index + 1}
+                            Acompanhante {index + 1}
                           </label>
                           <select
                             id={`companion-${index}`}
                             required
                             value={companion.guest_id || ''}
                             onChange={(e) => {
-                              const guest = guests.find(g => g.id === e.target.value)
+                              const guest = guests.find((g) => g.id === e.target.value)
                               handleCompanionChange(index, 'guest_id', e.target.value)
-                              handleCompanionChange(index, 'nome', guest?.nome_completo || e.target.value)
+                              handleCompanionChange(
+                                index,
+                                'nome',
+                                guest?.nome_completo || ''
+                              )
                             }}
                             className="w-full rounded-lg border border-gold/30 bg-[#09243D] px-4 py-2 font-sans text-sm text-cream focus:border-gold focus:outline-none transition-colors"
                           >
-                            <option value="">Selecione...</option>
+                            <option value="">Selecione o acompanhante...</option>
                             {guests
-                              .filter(g => g.id !== selectedGuestId) // Exclude main guest
+                              .filter((g) => g.id !== selectedGuestId)
                               .map((guest) => (
                                 <option key={guest.id} value={guest.id}>
                                   {guest.nome_completo}
                                 </option>
                               ))}
                           </select>
+                          {companion.nome && (
+                            <p className="mt-2 font-sans text-xs text-gold/70">
+                              ✅ Selecionado: <span className="text-cream">{companion.nome}</span>
+                            </p>
+                          )}
                         </div>
                         <fieldset>
                           <legend className="mb-2 block font-sans text-xs uppercase tracking-[0.15em] text-cream/80">
                             Comparecerá?
                           </legend>
-                          <div className="grid grid-cols-3 gap-2">
-                            <label className="flex cursor-pointer items-center justify-center gap-1 rounded border border-gold/30 bg-[#09243D] px-2 py-2 font-sans text-xs text-cream transition-all has-[:checked]:border-gold has-[:checked]:bg-gold/20">
+                          <div className="grid grid-cols-2 gap-2">
+                            <label
+                              className={`flex cursor-pointer items-center justify-center gap-1 rounded border px-2 py-2 font-sans text-xs text-cream transition-all ${
+                                companion.status === 'confirmed'
+                                  ? 'border-gold bg-gold/20'
+                                  : 'border-gold/30 bg-[#09243D] hover:border-gold/50'
+                              }`}
+                            >
                               <input
                                 type="radio"
                                 name={`comp-status-${index}`}
                                 checked={companion.status === 'confirmed'}
-                                onChange={() => handleCompanionChange(index, 'status', 'confirmed')}
+                                onChange={() =>
+                                  handleCompanionChange(index, 'status', 'confirmed')
+                                }
                                 className="accent-gold"
                               />
                               Sim
                             </label>
-                            <label className="flex cursor-pointer items-center justify-center gap-1 rounded border border-gold/30 bg-[#09243D] px-2 py-2 font-sans text-xs text-cream transition-all has-[:checked]:border-gold has-[:checked]:bg-gold/20">
+                            <label
+                              className={`flex cursor-pointer items-center justify-center gap-1 rounded border px-2 py-2 font-sans text-xs text-cream transition-all ${
+                                companion.status === 'declined'
+                                  ? 'border-gold bg-gold/20'
+                                  : 'border-gold/30 bg-[#09243D] hover:border-gold/50'
+                              }`}
+                            >
                               <input
                                 type="radio"
                                 name={`comp-status-${index}`}
                                 checked={companion.status === 'declined'}
-                                onChange={() => handleCompanionChange(index, 'status', 'declined')}
+                                onChange={() =>
+                                  handleCompanionChange(index, 'status', 'declined')
+                                }
                                 className="accent-gold"
                               />
                               Não
-                            </label>
-                            <label className="flex cursor-pointer items-center justify-center gap-1 rounded border border-gold/30 bg-[#09243D] px-2 py-2 font-sans text-xs text-cream transition-all has-[:checked]:border-gold has-[:checked]:bg-gold/20">
-                              <input
-                                type="radio"
-                                name={`comp-status-${index}`}
-                                checked={companion.status === 'pending'}
-                                onChange={() => handleCompanionChange(index, 'status', 'pending')}
-                                className="accent-gold"
-                              />
-                              Pendente
                             </label>
                           </div>
                         </fieldset>
@@ -389,19 +416,39 @@ export default function RsvpPage() {
                 className="w-full resize-none rounded-lg border border-gold/30 bg-[#061A2F] px-4 py-3 font-sans text-sm text-cream placeholder:text-muted-foreground/60 focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold transition-colors"
               />
             </div>
+
+            {errorMsg && (
+              <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-center font-sans text-sm text-red-300">
+                {errorMsg}
+              </div>
+            )}
           </div>
 
           <div className="mt-8 flex justify-center">
             <button
               type="submit"
               disabled={loading}
-              className="hover:scale-105 transition-transform disabled:cursor-not-allowed disabled:opacity-60"
+              className="group relative inline-flex h-14 min-w-[240px] items-center justify-center overflow-hidden rounded-full px-8 font-serif text-lg font-medium text-[#061A2F] shadow-lg shadow-gold/30 transition-all duration-300 ease-out hover:scale-[1.03] hover:shadow-xl hover:shadow-gold/50 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100 disabled:hover:shadow-lg"
+              style={{
+                background: 'linear-gradient(135deg, #D4AF37 0%, #F4E5B2 35%, #D4AF37 55%, #B8860B 100%)',
+              }}
             >
-              <img
-                src="/confirme.png"
-                alt={loading ? 'Enviando…' : 'Confirmar Presença'}
-                className="h-12 w-auto"
+              <span
+                className="absolute inset-0 rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                style={{
+                  background: 'linear-gradient(135deg, #B8860B 0%, #F4E5B2 30%, #FFD700 50%, #D4AF37 100%)',
+                }}
               />
+              <span className="relative z-10 flex items-center gap-2">
+                {loading ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span className="tracking-wide">Enviando…</span>
+                  </>
+                ) : (
+                  <span className="tracking-wide">Confirmar Presença</span>
+                )}
+              </span>
             </button>
           </div>
         </form>

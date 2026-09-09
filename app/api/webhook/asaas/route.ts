@@ -93,8 +93,8 @@ export async function POST(request: NextRequest) {
           })
         }
       }
-    } else if (data.event === 'PAYMENT_DELETED' || data.event === 'PAYMENT_CANCELLED' || data.event === 'PAYMENT_EXPIRED') {
-      const status = data.event === 'PAYMENT_EXPIRED' ? 'EXPIRED' : 'CANCELLED'
+    } else if (data.event === 'PAYMENT_DELETED' || data.event === 'PAYMENT_OVERDUE' || data.event === 'PAYMENT_BANK_SLIP_CANCELLED') {
+      const status = data.event === 'PAYMENT_OVERDUE' ? 'EXPIRED' : 'CANCELLED'
       
       const { data: payment, error: paymentError } = await supabase
         .from('payments')

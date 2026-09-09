@@ -92,7 +92,7 @@ export async function createWebhook(url: string): Promise<void> {
     },
     body: JSON.stringify({
       url,
-      events: ['PAYMENT_CONFIRMED', 'PAYMENT_DELETED', 'PAYMENT_CANCELLED', 'PAYMENT_EXPIRED'],
+      events: ['PAYMENT_CONFIRMED', 'PAYMENT_DELETED', 'PAYMENT_OVERDUE', 'PAYMENT_BANK_SLIP_CANCELLED'],
       authToken: process.env.ASAAS_WEBHOOK_SECRET,
     }),
   })

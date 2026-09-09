@@ -54,7 +54,11 @@ export default function AdminPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [showAddProduct, setShowAddProduct] = useState(false)
   const [newProduct, setNewProduct] = useState({ nome: '', descricao: '', valor: 0, imagem_url: '' })
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [editProductForm, setEditProductForm] = useState({ nome: '', descricao: '', valor: 0, imagem_url: '' })
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const [productError, setProductError] = useState('')
   const [giftsReceived, setGiftsReceived] = useState<GiftReceived[]>([])
 
   const handleLogin = (e: React.FormEvent) => {
@@ -117,9 +121,12 @@ export default function AdminPage() {
     try {
       const response = await fetch('/api/gifts')
       const data = await response.json()
-      setProducts(data)
+      // Filter out products without valid IDs
+      const validProducts = Array.isArray(data) ? data.filter((p: Product) => p && p.id) : []
+      setProducts(validProducts)
     } catch (error) {
       console.error('Error fetching products:', error)
+      setProducts([])
     }
   }
 
@@ -159,8 +166,9 @@ export default function AdminPage() {
     window.open(`https://wa.me/${guest.whatsapp.replace(/\D/g, '')}?text=${message}`, '_blank')
   }
 
-  const handleImageUpload = async (file: File) => {
+  const handleImageUpload = async (file: File, target: 'new' | 'edit' = 'new') => {
     setUploadingImage(true)
+    setUploadError('')
     try {
       const formData = new FormData()
       formData.append('file', file)
@@ -170,12 +178,19 @@ export default function AdminPage() {
         body: formData,
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        setNewProduct({ ...newProduct, imagem_url: data.url })
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.url) {
+        if (target === 'new') {
+          setNewProduct({ ...newProduct, imagem_url: data.url })
+        } else {
+          setEditProductForm({ ...editProductForm, imagem_url: data.url })
+        }
+      } else {
+        setUploadError(data.error || 'Erro ao enviar imagem')
       }
     } catch (error) {
       console.error('Error uploading image:', error)
+      setUploadError('Erro de conexão ao enviar imagem')
     } finally {
       setUploadingImage(false)
     }
@@ -183,6 +198,7 @@ export default function AdminPage() {
 
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault()
+    setProductError('')
     try {
       const response = await fetch('/api/gifts', {
         method: 'POST',
@@ -192,14 +208,69 @@ export default function AdminPage() {
       if (response.ok) {
         setNewProduct({ nome: '', descricao: '', valor: 0, imagem_url: '' })
         setShowAddProduct(false)
+        setUploadError('')
         fetchProducts()
+      } else {
+        const err = await response.json().catch(() => ({}))
+        setProductError(err.error || 'Erro ao salvar produto')
       }
     } catch (error) {
       console.error('Error adding product:', error)
+      setProductError('Erro de conexão')
     }
   }
 
+  const handleEditProduct = (product: Product) => {
+    if (!product || !product.id) {
+      setProductError('Produto inválido ou sem ID')
+      return
+    }
+    setEditingProduct(product)
+    setEditProductForm({
+      nome: product.nome,
+      descricao: product.descricao,
+      valor: product.valor,
+      imagem_url: product.imagem_url || '',
+    })
+    setProductError('')
+    setUploadError('')
+  }
+
+  const handleSaveEditProduct = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingProduct || !editingProduct.id) {
+      setProductError('Produto não selecionado ou ID inválido')
+      return
+    }
+    setProductError('')
+    try {
+      const response = await fetch(`/api/gifts/${editingProduct.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editProductForm),
+      })
+      if (response.ok) {
+        setEditingProduct(null)
+        setUploadError('')
+        fetchProducts()
+      } else {
+        const err = await response.json().catch(() => ({}))
+        setProductError(err.error || 'Erro ao atualizar produto')
+      }
+    } catch (error) {
+      console.error('Error updating product:', error)
+      setProductError('Erro de conexão')
+    }
+  }
+
+  const handleCancelEditProduct = () => {
+    setEditingProduct(null)
+    setProductError('')
+    setUploadError('')
+  }
+
   const handleDeleteProduct = async (id: string) => {
+    if (!confirm('Deseja realmente excluir este produto?')) return
     try {
       await fetch(`/api/gifts/${id}`, { method: 'DELETE' })
       fetchProducts()
@@ -601,24 +672,30 @@ export default function AdminPage() {
                               accept="image/*"
                               onChange={(e) => {
                                 const file = e.target.files?.[0]
-                                if (file) handleImageUpload(file)
+                                if (file) handleImageUpload(file, 'new')
                               }}
                               disabled={uploadingImage}
                               className="w-full rounded-lg border border-gold/30 bg-[#09243D] px-4 py-2 text-cream focus:border-gold focus:outline-none"
                             />
                             {uploadingImage && (
-                              <p className="text-sm text-gold">Enviando imagem...</p>
+                              <p className="text-sm text-gold">⏳ Enviando imagem...</p>
+                            )}
+                            {uploadError && (
+                              <p className="text-sm text-red-400">❌ {uploadError}</p>
                             )}
                             {newProduct.imagem_url && (
                               <img
                                 src={newProduct.imagem_url}
                                 alt="Preview"
-                                className="h-32 w-32 object-cover rounded"
+                                className="h-32 w-32 object-cover rounded border border-gold/30"
                               />
                             )}
                           </div>
                         </div>
                       </div>
+                      {productError && (
+                        <p className="mt-4 text-sm text-red-400">{productError}</p>
+                      )}
                       <div className="mt-4 flex gap-2">
                         <button
                           type="submit"
@@ -628,7 +705,120 @@ export default function AdminPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setShowAddProduct(false)}
+                          onClick={() => {
+                            setShowAddProduct(false)
+                            setNewProduct({ nome: '', descricao: '', valor: 0, imagem_url: '' })
+                            setUploadError('')
+                            setProductError('')
+                          }}
+                          className="rounded-lg border border-gold/30 px-6 py-2 text-cream hover:bg-gold/10 transition-colors font-sans text-xs uppercase tracking-[0.15em]"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {editingProduct && (
+                    <form onSubmit={handleSaveEditProduct} className="mb-6 rounded-lg border-2 border-gold/60 bg-[#09243D] p-6 shadow-lg shadow-gold/20">
+                      <div className="mb-4 flex items-center justify-between">
+                        <h3 className="font-serif text-2xl text-gold-gradient">
+                          ✏️ Editar Produto
+                        </h3>
+                        <span className="font-sans text-xs uppercase tracking-wider text-cream/60">
+                          ID: {editingProduct.id.slice(0, 8)}…
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block font-sans text-xs uppercase tracking-[0.15em] text-cream/90 mb-2">
+                          Nome *
+                        </label>
+                          <input
+                            type="text"
+                            required
+                            value={editProductForm.nome}
+                            onChange={(e) => setEditProductForm({ ...editProductForm, nome: e.target.value })}
+                            className="w-full rounded-lg border border-gold/30 bg-[#061A2F] px-4 py-2 text-cream focus:border-gold focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-sans text-xs uppercase tracking-[0.15em] text-cream/90 mb-2">
+                            Valor *
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            required
+                            value={editProductForm.valor}
+                            onChange={(e) => setEditProductForm({ ...editProductForm, valor: parseFloat(e.target.value) || 0 })}
+                            className="w-full rounded-lg border border-gold/30 bg-[#061A2F] px-4 py-2 text-cream focus:border-gold focus:outline-none"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block font-sans text-xs uppercase tracking-[0.15em] text-cream/90 mb-2">
+                            Descrição
+                          </label>
+                          <textarea
+                            value={editProductForm.descricao}
+                            onChange={(e) => setEditProductForm({ ...editProductForm, descricao: e.target.value })}
+                            className="w-full rounded-lg border border-gold/30 bg-[#061A2F] px-4 py-2 text-cream focus:border-gold focus:outline-none"
+                            rows={3}
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block font-sans text-xs uppercase tracking-[0.15em] text-cream/90 mb-2">
+                            Foto do Produto
+                          </label>
+                          <div className="space-y-2">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (file) handleImageUpload(file, 'edit')
+                              }}
+                              disabled={uploadingImage}
+                              className="w-full rounded-lg border border-gold/30 bg-[#061A2F] px-4 py-2 text-cream focus:border-gold focus:outline-none"
+                            />
+                            {uploadingImage && (
+                              <p className="text-sm text-gold">⏳ Enviando imagem...</p>
+                            )}
+                            {uploadError && (
+                              <p className="text-sm text-red-400">❌ {uploadError}</p>
+                            )}
+                            {editProductForm.imagem_url && (
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={editProductForm.imagem_url}
+                                  alt="Preview"
+                                  className="h-32 w-32 object-cover rounded border border-gold/30"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setEditProductForm({ ...editProductForm, imagem_url: '' })}
+                                  className="rounded border border-red-500/40 px-3 py-1 text-xs text-red-400 hover:bg-red-500/10 transition-colors"
+                                >
+                                  Remover imagem
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {productError && (
+                        <p className="mt-4 text-sm text-red-400">{productError}</p>
+                      )}
+                      <div className="mt-4 flex gap-2">
+                        <button
+                          type="submit"
+                          className="rounded-lg bg-gold px-6 py-2 text-black hover:bg-gold/80 transition-colors font-sans text-xs uppercase tracking-[0.15em]"
+                        >
+                          Salvar Alterações
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCancelEditProduct}
                           className="rounded-lg border border-gold/30 px-6 py-2 text-cream hover:bg-gold/10 transition-colors font-sans text-xs uppercase tracking-[0.15em]"
                         >
                           Cancelar
@@ -642,17 +832,17 @@ export default function AdminPage() {
                       <thead className="bg-[#09243D]">
                         <tr>
                           <th className="px-4 py-3 text-left font-sans text-xs uppercase tracking-[0.15em] text-gold">
-                            Foto
-                          </th>
+                          Foto
+                        </th>
                           <th className="px-4 py-3 text-left font-sans text-xs uppercase tracking-[0.15em] text-gold">
-                            Nome
-                          </th>
+                          Nome
+                        </th>
                           <th className="px-4 py-3 text-left font-sans text-xs uppercase tracking-[0.15em] text-gold">
-                            Descrição
-                          </th>
+                          Descrição
+                        </th>
                           <th className="px-4 py-3 text-left font-sans text-xs uppercase tracking-[0.15em] text-gold">
-                            Valor
-                          </th>
+                          Valor
+                        </th>
                           <th className="px-4 py-3 text-right font-sans text-xs uppercase tracking-[0.15em] text-gold">
                             Ações
                           </th>
@@ -671,19 +861,29 @@ export default function AdminPage() {
                             <td className="px-4 py-3 font-sans text-sm text-cream">
                               {product.nome}
                             </td>
-                            <td className="px-4 py-3 font-sans text-sm text-cream/80">
+                            <td className="px-4 py-3 font-sans text-sm text-cream/80 max-w-sm truncate">
                               {product.descricao || '-'}
                             </td>
                             <td className="px-4 py-3 font-sans text-sm text-cream">
-                              R$ {parseFloat(product.valor).toFixed(2)}
+                              R$ {Number(product.valor).toFixed(2)}
                             </td>
                             <td className="px-4 py-3 text-right">
-                              <button
-                                onClick={() => handleDeleteProduct(product.id)}
-                                className="text-red-400 hover:text-red-300 transition-colors"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => handleEditProduct(product)}
+                                  className="text-gold hover:text-gold/80 transition-colors p-1"
+                                  title="Editar produto"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteProduct(product.id)}
+                                  className="text-red-400 hover:text-red-300 transition-colors p-1"
+                                  title="Excluir produto"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
