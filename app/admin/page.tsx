@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { LayoutDashboard, Users, Package, DollarSign, Settings, Plus, Trash2, Edit, Lock, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, Package, DollarSign, Settings, Plus, Trash2, Edit, Lock, LogOut, TrendingUp, Gift, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 
 type Tab = 'dashboard' | 'convidados' | 'produtos' | 'confirmados' | 'financeiro' | 'presentes' | 'configuracoes'
 
@@ -20,6 +20,7 @@ type Product = {
   descricao: string
   valor: number
   imagem_url?: string
+  quantidade_disponivel?: number
 }
 
 type GiftReceived = {
@@ -53,9 +54,9 @@ export default function AdminPage() {
   const [newGuest, setNewGuest] = useState({ nome_completo: '', email: '', telefone: '', whatsapp: '' })
   const [products, setProducts] = useState<Product[]>([])
   const [showAddProduct, setShowAddProduct] = useState(false)
-  const [newProduct, setNewProduct] = useState({ nome: '', descricao: '', valor: 0, imagem_url: '' })
+  const [newProduct, setNewProduct] = useState({ nome: '', descricao: '', valor: 0, imagem_url: '', quantidade_disponivel: 9999 })
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
-  const [editProductForm, setEditProductForm] = useState({ nome: '', descricao: '', valor: 0, imagem_url: '' })
+  const [editProductForm, setEditProductForm] = useState({ nome: '', descricao: '', valor: 0, imagem_url: '', quantidade_disponivel: 9999 })
   const [uploadingImage, setUploadingImage] = useState(false)
   const [uploadError, setUploadError] = useState('')
   const [productError, setProductError] = useState('')
@@ -206,7 +207,7 @@ export default function AdminPage() {
         body: JSON.stringify(newProduct),
       })
       if (response.ok) {
-        setNewProduct({ nome: '', descricao: '', valor: 0, imagem_url: '' })
+        setNewProduct({ nome: '', descricao: '', valor: 0, imagem_url: '', quantidade_disponivel: 9999 })
         setShowAddProduct(false)
         setUploadError('')
         fetchProducts()
@@ -231,6 +232,7 @@ export default function AdminPage() {
       descricao: product.descricao,
       valor: product.valor,
       imagem_url: product.imagem_url || '',
+      quantidade_disponivel: product.quantidade_disponivel || 9999,
     })
     setProductError('')
     setUploadError('')
@@ -408,37 +410,174 @@ export default function AdminPage() {
             <div className="rounded-lg border border-gold/30 bg-[#09243D]/50 p-8">
               {activeTab === 'dashboard' && (
                 <div>
-                  <h2 className="font-serif text-3xl text-gold-gradient mb-6">Dashboard</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className="rounded-lg border border-gold/30 bg-[#061A2F] p-6">
-                      <p className="font-sans text-xs uppercase tracking-[0.2em] text-gold/90">
-                        Total de Convidados
-                      </p>
-                      <p className="mt-2 font-serif text-3xl text-cream">{guests.length}</p>
+                  <div className="mb-8">
+                    <h2 className="font-serif text-4xl text-gold-gradient mb-2">Dashboard</h2>
+                    <p className="font-sans text-sm text-cream/70">Visão geral do seu casamento</p>
+                  </div>
+
+                  {/* Stats Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div className="group relative overflow-hidden rounded-xl border border-gold/30 bg-gradient-to-br from-[#061A2F] to-[#09243D] p-6 shadow-lg shadow-gold/10 transition-all duration-300 hover:shadow-gold/20 hover:scale-[1.02]">
+                      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <Users className="h-16 w-16 text-gold" />
+                      </div>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold/20 border border-gold/30">
+                          <Users className="h-5 w-5 text-gold" />
+                        </div>
+                        <p className="font-sans text-xs uppercase tracking-[0.2em] text-gold/90">
+                          Total Convidados
+                        </p>
+                      </div>
+                      <p className="font-serif text-4xl font-bold text-cream mb-1">{guests.length}</p>
+                      <p className="font-sans text-xs text-cream/60">Pessoas convidadas</p>
                     </div>
-                    <div className="rounded-lg border border-gold/30 bg-[#061A2F] p-6">
-                      <p className="font-sans text-xs uppercase tracking-[0.2em] text-gold/90">
-                        Confirmações
-                      </p>
-                      <p className="mt-2 font-serif text-3xl text-cream">
+
+                    <div className="group relative overflow-hidden rounded-xl border border-green-500/30 bg-gradient-to-br from-[#061A2F] to-[#0a2f1a] p-6 shadow-lg shadow-green-500/10 transition-all duration-300 hover:shadow-green-500/20 hover:scale-[1.02]">
+                      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <CheckCircle className="h-16 w-16 text-green-400" />
+                      </div>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/20 border border-green-500/30">
+                          <CheckCircle className="h-5 w-5 text-green-400" />
+                        </div>
+                        <p className="font-sans text-xs uppercase tracking-[0.2em] text-green-400/90">
+                          Confirmações
+                        </p>
+                      </div>
+                      <p className="font-serif text-4xl font-bold text-green-400 mb-1">
                         {guests.filter(g => g.status === 'confirmed').length}
                       </p>
-                    </div>
-                    <div className="rounded-lg border border-gold/30 bg-[#061A2F] p-6">
-                      <p className="font-sans text-xs uppercase tracking-[0.2em] text-gold/90">
-                        Recusas
+                      <p className="font-sans text-xs text-green-400/60">
+                        {guests.length > 0 ? Math.round((guests.filter(g => g.status === 'confirmed').length / guests.length) * 100) : 0}% do total
                       </p>
-                      <p className="mt-2 font-serif text-3xl text-cream">
+                    </div>
+
+                    <div className="group relative overflow-hidden rounded-xl border border-red-500/30 bg-gradient-to-br from-[#061A2F] to-[#1a0a0a] p-6 shadow-lg shadow-red-500/10 transition-all duration-300 hover:shadow-red-500/20 hover:scale-[1.02]">
+                      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <XCircle className="h-16 w-16 text-red-400" />
+                      </div>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/20 border border-red-500/30">
+                          <XCircle className="h-5 w-5 text-red-400" />
+                        </div>
+                        <p className="font-sans text-xs uppercase tracking-[0.2em] text-red-400/90">
+                          Recusas
+                        </p>
+                      </div>
+                      <p className="font-serif text-4xl font-bold text-red-400 mb-1">
                         {guests.filter(g => g.status === 'declined').length}
                       </p>
+                      <p className="font-sans text-xs text-red-400/60">Não poderão comparecer</p>
                     </div>
-                    <div className="rounded-lg border border-gold/30 bg-[#061A2F] p-6">
-                      <p className="font-sans text-xs uppercase tracking-[0.2em] text-gold/90">
-                        Pendentes
-                      </p>
-                      <p className="mt-2 font-serif text-3xl text-cream">
+
+                    <div className="group relative overflow-hidden rounded-xl border border-yellow-500/30 bg-gradient-to-br from-[#061A2F] to-[#1a1a0a] p-6 shadow-lg shadow-yellow-500/10 transition-all duration-300 hover:shadow-yellow-500/20 hover:scale-[1.02]">
+                      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <Clock className="h-16 w-16 text-yellow-400" />
+                      </div>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-500/20 border border-yellow-500/30">
+                          <Clock className="h-5 w-5 text-yellow-400" />
+                        </div>
+                        <p className="font-sans text-xs uppercase tracking-[0.2em] text-yellow-400/90">
+                          Pendentes
+                        </p>
+                      </div>
+                      <p className="font-serif text-4xl font-bold text-yellow-400 mb-1">
                         {guests.filter(g => g.status === 'pending').length}
                       </p>
+                      <p className="font-sans text-xs text-yellow-400/60">Aguardando resposta</p>
+                    </div>
+                  </div>
+
+                  {/* Additional Stats */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Financial Overview */}
+                    <div className="rounded-xl border border-gold/30 bg-gradient-to-br from-[#061A2F] to-[#09243D] p-6 shadow-lg shadow-gold/10">
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold/20 border border-gold/30">
+                            <DollarSign className="h-5 w-5 text-gold" />
+                          </div>
+                          <div>
+                            <h3 className="font-serif text-xl text-gold-gradient">Financeiro</h3>
+                            <p className="font-sans text-xs text-cream/60">Resumo de presentes</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-[#09243D]/50 border border-gold/20">
+                          <div className="flex items-center gap-3">
+                            <Gift className="h-5 w-5 text-gold" />
+                            <span className="font-sans text-sm text-cream/80">Total Arrecadado</span>
+                          </div>
+                          <span className="font-serif text-xl font-bold text-gold">
+                            R$ {giftsReceived.reduce((acc, g) => acc + (g.amount || 0), 0).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-[#09243D]/50 border border-gold/20">
+                          <div className="flex items-center gap-3">
+                            <Package className="h-5 w-5 text-gold" />
+                            <span className="font-sans text-sm text-cream/80">Presentes Recebidos</span>
+                          </div>
+                          <span className="font-serif text-xl font-bold text-gold">
+                            {giftsReceived.length}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-[#09243D]/50 border border-gold/20">
+                          <div className="flex items-center gap-3">
+                            <TrendingUp className="h-5 w-5 text-green-400" />
+                            <span className="font-sans text-sm text-cream/80">Média por Presente</span>
+                          </div>
+                          <span className="font-serif text-xl font-bold text-green-400">
+                            R$ {giftsReceived.length > 0 ? (giftsReceived.reduce((acc, g) => acc + (g.amount || 0), 0) / giftsReceived.length).toFixed(2) : '0.00'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Products Overview */}
+                    <div className="rounded-xl border border-gold/30 bg-gradient-to-br from-[#061A2F] to-[#09243D] p-6 shadow-lg shadow-gold/10">
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold/20 border border-gold/30">
+                            <Package className="h-5 w-5 text-gold" />
+                          </div>
+                          <div>
+                            <h3 className="font-serif text-xl text-gold-gradient">Produtos</h3>
+                            <p className="font-sans text-xs text-cream/60">Status do catálogo</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-[#09243D]/50 border border-gold/20">
+                          <div className="flex items-center gap-3">
+                            <Package className="h-5 w-5 text-gold" />
+                            <span className="font-sans text-sm text-cream/80">Total de Produtos</span>
+                          </div>
+                          <span className="font-serif text-xl font-bold text-gold">
+                            {products.length}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-[#09243D]/50 border border-gold/20">
+                          <div className="flex items-center gap-3">
+                            <CheckCircle className="h-5 w-5 text-green-400" />
+                            <span className="font-sans text-sm text-cream/80">Disponíveis</span>
+                          </div>
+                          <span className="font-serif text-xl font-bold text-green-400">
+                            {products.filter(p => (p.quantidade_disponivel || 9999) > 0).length}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-[#09243D]/50 border border-gold/20">
+                          <div className="flex items-center gap-3">
+                            <AlertCircle className="h-5 w-5 text-red-400" />
+                            <span className="font-sans text-sm text-cream/80">Esgotados</span>
+                          </div>
+                          <span className="font-serif text-xl font-bold text-red-400">
+                            {products.filter(p => (p.quantidade_disponivel || 9999) <= 0).length}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -446,26 +585,38 @@ export default function AdminPage() {
 
               {activeTab === 'convidados' && (
                 <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="font-serif text-3xl text-gold-gradient">
-                      Cadastro de Convidados
-                    </h2>
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h2 className="font-serif text-3xl text-gold-gradient mb-2">
+                        Cadastro de Convidados
+                      </h2>
+                      <p className="font-sans text-sm text-cream/70">Gerencie sua lista de convidados</p>
+                    </div>
                     <button
                       onClick={() => setShowAddGuest(true)}
-                      className="flex items-center gap-2 rounded-lg bg-gold px-4 py-2 text-black hover:bg-gold/80 transition-colors"
+                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-gold to-gold/80 px-6 py-3 text-black hover:from-gold/90 hover:to-gold/70 transition-all shadow-lg shadow-gold/20 hover:shadow-gold/30"
                     >
                       <Plus className="h-4 w-4" />
-                      <span className="font-sans text-xs uppercase tracking-[0.15em]">
-                        Adicionar
+                      <span className="font-sans text-xs uppercase tracking-[0.15em] font-semibold">
+                        Adicionar Convidado
                       </span>
                     </button>
                   </div>
 
                   {showAddGuest && (
-                    <form onSubmit={handleAddGuest} className="mb-6 rounded-lg border border-gold/30 bg-[#061A2F] p-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <form onSubmit={handleAddGuest} className="mb-8 rounded-2xl border-2 border-gold/40 bg-gradient-to-br from-[#061A2F] to-[#09243D] p-8 shadow-2xl shadow-gold/20">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold/20 border border-gold/30">
+                          <Users className="h-6 w-6 text-gold" />
+                        </div>
                         <div>
-                          <label className="block font-sans text-xs uppercase tracking-[0.15em] text-cream/90 mb-2">
+                          <h3 className="font-serif text-2xl text-gold-gradient">Novo Convidado</h3>
+                          <p className="font-sans text-xs text-cream/60">Preencha os dados do convidado</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block font-sans text-xs uppercase tracking-[0.15em] text-gold/90 mb-2">
                             Nome Completo *
                           </label>
                           <input
@@ -473,33 +624,36 @@ export default function AdminPage() {
                             required
                             value={newGuest.nome_completo}
                             onChange={(e) => setNewGuest({ ...newGuest, nome_completo: e.target.value })}
-                            className="w-full rounded-lg border border-gold/30 bg-[#09243D] px-4 py-2 text-cream focus:border-gold focus:outline-none"
+                            className="w-full rounded-xl border border-gold/30 bg-[#09243D] px-4 py-3 text-cream placeholder:text-cream/40 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-all"
+                            placeholder="Nome completo do convidado"
                           />
                         </div>
                         <div>
-                          <label className="block font-sans text-xs uppercase tracking-[0.15em] text-cream/90 mb-2">
+                          <label className="block font-sans text-xs uppercase tracking-[0.15em] text-gold/90 mb-2">
                             Email
                           </label>
                           <input
                             type="email"
                             value={newGuest.email}
                             onChange={(e) => setNewGuest({ ...newGuest, email: e.target.value })}
-                            className="w-full rounded-lg border border-gold/30 bg-[#09243D] px-4 py-2 text-cream focus:border-gold focus:outline-none"
+                            className="w-full rounded-xl border border-gold/30 bg-[#09243D] px-4 py-3 text-cream placeholder:text-cream/40 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-all"
+                            placeholder="email@exemplo.com"
                           />
                         </div>
                         <div>
-                          <label className="block font-sans text-xs uppercase tracking-[0.15em] text-cream/90 mb-2">
+                          <label className="block font-sans text-xs uppercase tracking-[0.15em] text-gold/90 mb-2">
                             Telefone
                           </label>
                           <input
                             type="tel"
                             value={newGuest.telefone}
                             onChange={(e) => setNewGuest({ ...newGuest, telefone: e.target.value })}
-                            className="w-full rounded-lg border border-gold/30 bg-[#09243D] px-4 py-2 text-cream focus:border-gold focus:outline-none"
+                            className="w-full rounded-xl border border-gold/30 bg-[#09243D] px-4 py-3 text-cream placeholder:text-cream/40 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-all"
+                            placeholder="(11) 99999-9999"
                           />
                         </div>
                         <div>
-                          <label className="block font-sans text-xs uppercase tracking-[0.15em] text-cream/90 mb-2">
+                          <label className="block font-sans text-xs uppercase tracking-[0.15em] text-gold/90 mb-2">
                             WhatsApp *
                           </label>
                           <input
@@ -508,21 +662,21 @@ export default function AdminPage() {
                             placeholder="11999999999"
                             value={newGuest.whatsapp}
                             onChange={(e) => setNewGuest({ ...newGuest, whatsapp: e.target.value })}
-                            className="w-full rounded-lg border border-gold/30 bg-[#09243D] px-4 py-2 text-cream focus:border-gold focus:outline-none"
+                            className="w-full rounded-xl border border-gold/30 bg-[#09243D] px-4 py-3 text-cream placeholder:text-cream/40 focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-all"
                           />
                         </div>
                       </div>
-                      <div className="mt-4 flex gap-2">
+                      <div className="mt-6 flex gap-3">
                         <button
                           type="submit"
-                          className="rounded-lg bg-gold px-6 py-2 text-black hover:bg-gold/80 transition-colors font-sans text-xs uppercase tracking-[0.15em]"
+                          className="flex-1 rounded-xl bg-gradient-to-r from-gold to-gold/80 px-6 py-3 text-black hover:from-gold/90 hover:to-gold/70 transition-all font-sans text-xs uppercase tracking-[0.15em] font-semibold shadow-lg shadow-gold/20"
                         >
-                          Salvar
+                          Salvar Convidado
                         </button>
                         <button
                           type="button"
                           onClick={() => setShowAddGuest(false)}
-                          className="rounded-lg border border-gold/30 px-6 py-2 text-cream hover:bg-gold/10 transition-colors font-sans text-xs uppercase tracking-[0.15em]"
+                          className="rounded-xl border border-gold/30 px-6 py-3 text-cream hover:bg-gold/10 transition-all font-sans text-xs uppercase tracking-[0.15em]"
                         >
                           Cancelar
                         </button>
@@ -530,76 +684,107 @@ export default function AdminPage() {
                     </form>
                   )}
 
-                  <div className="rounded-lg border border-gold/30 bg-[#061A2F] overflow-hidden">
-                    <table className="w-full">
-                      <thead className="bg-[#09243D]">
-                        <tr>
-                          <th className="px-4 py-3 text-left font-sans text-xs uppercase tracking-[0.15em] text-gold">
-                            Nome
-                          </th>
-                          <th className="px-4 py-3 text-left font-sans text-xs uppercase tracking-[0.15em] text-gold">
-                            Email
-                          </th>
-                          <th className="px-4 py-3 text-left font-sans text-xs uppercase tracking-[0.15em] text-gold">
-                            Telefone
-                          </th>
-                          <th className="px-4 py-3 text-left font-sans text-xs uppercase tracking-[0.15em] text-gold">
-                            Status
-                          </th>
-                          <th className="px-4 py-3 text-left font-sans text-xs uppercase tracking-[0.15em] text-gold">
-                            WhatsApp
-                          </th>
-                          <th className="px-4 py-3 text-right font-sans text-xs uppercase tracking-[0.15em] text-gold">
-                            Ações
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {guests.map((guest) => (
-                          <tr key={guest.id} className="border-t border-gold/20">
-                            <td className="px-4 py-3 font-sans text-sm text-cream">
-                              {guest.nome_completo}
-                            </td>
-                            <td className="px-4 py-3 font-sans text-sm text-cream/80">
-                              {guest.email || '-'}
-                            </td>
-                            <td className="px-4 py-3 font-sans text-sm text-cream/80">
-                              {guest.telefone || '-'}
-                            </td>
-                            <td className="px-4 py-3 font-sans text-sm">
-                              <span className={getStatusColor(guest.status)}>
-                                {getStatusLabel(guest.status)}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 font-sans text-sm text-cream/80">
-                              {guest.whatsapp || '-'}
-                            </td>
-                            <td className="px-4 py-3 text-right flex gap-2 justify-end">
-                              {guest.whatsapp && (
-                                <button
-                                  onClick={() => sendWhatsAppInvite(guest)}
-                                  className="text-green-400 hover:text-green-300 transition-colors"
-                                  title="Enviar convite pelo WhatsApp"
-                                >
-                                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                                  </svg>
-                                </button>
-                              )}
-                              <button
-                                onClick={() => handleDeleteGuest(guest.id)}
-                                className="text-red-400 hover:text-red-300 transition-colors"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </td>
+                  <div className="rounded-2xl border border-gold/30 bg-gradient-to-br from-[#061A2F] to-[#09243D] overflow-hidden shadow-xl shadow-gold/10">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-[#09243D]/80 border-b border-gold/20">
+                          <tr>
+                            <th className="px-6 py-4 text-left font-sans text-xs uppercase tracking-[0.15em] text-gold">
+                              Nome
+                            </th>
+                            <th className="px-6 py-4 text-left font-sans text-xs uppercase tracking-[0.15em] text-gold">
+                              Email
+                            </th>
+                            <th className="px-6 py-4 text-left font-sans text-xs uppercase tracking-[0.15em] text-gold">
+                              Telefone
+                            </th>
+                            <th className="px-6 py-4 text-left font-sans text-xs uppercase tracking-[0.15em] text-gold">
+                              Status
+                            </th>
+                            <th className="px-6 py-4 text-left font-sans text-xs uppercase tracking-[0.15em] text-gold">
+                              WhatsApp
+                            </th>
+                            <th className="px-6 py-4 text-right font-sans text-xs uppercase tracking-[0.15em] text-gold">
+                              Ações
+                            </th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {guests.map((guest) => (
+                            <tr key={guest.id} className="border-t border-gold/10 hover:bg-gold/5 transition-colors">
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/20 border border-gold/30">
+                                    <span className="font-serif text-sm font-semibold text-gold">
+                                      {guest.nome_completo.charAt(0).toUpperCase()}
+                                    </span>
+                                  </div>
+                                  <span className="font-sans text-sm font-medium text-cream">
+                                    {guest.nome_completo}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 font-sans text-sm text-cream/70">
+                                {guest.email || '-'}
+                              </td>
+                              <td className="px-6 py-4 font-sans text-sm text-cream/70">
+                                {guest.telefone || '-'}
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider ${
+                                  guest.status === 'confirmed' 
+                                    ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                                    : guest.status === 'declined'
+                                    ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                    : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                                }`}>
+                                  {guest.status === 'confirmed' && <CheckCircle className="h-3 w-3" />}
+                                  {guest.status === 'declined' && <XCircle className="h-3 w-3" />}
+                                  {guest.status === 'pending' && <Clock className="h-3 w-3" />}
+                                  {getStatusLabel(guest.status)}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 font-sans text-sm text-cream/70">
+                                {guest.whatsapp || '-'}
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  {guest.whatsapp && (
+                                    <button
+                                      onClick={() => sendWhatsAppInvite(guest)}
+                                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/20 border border-green-500/30 text-green-400 hover:bg-green-500/30 transition-all"
+                                      title="Enviar convite pelo WhatsApp"
+                                    >
+                                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                                      </svg>
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => handleDeleteGuest(guest.id)}
+                                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition-all"
+                                    title="Excluir convidado"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                     {guests.length === 0 && (
-                      <div className="px-4 py-8 text-center font-sans text-cream/60">
-                        Nenhum convidado cadastrado
+                      <div className="px-6 py-12 text-center">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gold/20 border border-gold/30 mx-auto mb-4">
+                          <Users className="h-8 w-8 text-gold/50" />
+                        </div>
+                        <p className="font-sans text-sm text-cream/60">
+                          Nenhum convidado cadastrado ainda
+                        </p>
+                        <p className="font-sans text-xs text-cream/40 mt-1">
+                          Clique em "Adicionar Convidado" para começar
+                        </p>
                       </div>
                     )}
                   </div>
@@ -608,17 +793,20 @@ export default function AdminPage() {
 
               {activeTab === 'produtos' && (
                 <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="font-serif text-3xl text-gold-gradient">
-                      Cadastro de Produtos
-                    </h2>
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h2 className="font-serif text-3xl text-gold-gradient mb-2">
+                        Cadastro de Produtos
+                      </h2>
+                      <p className="font-sans text-sm text-cream/70">Gerencie sua lista de presentes</p>
+                    </div>
                     <button
                       onClick={() => setShowAddProduct(true)}
-                      className="flex items-center gap-2 rounded-lg bg-gold px-4 py-2 text-black hover:bg-gold/80 transition-colors"
+                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-gold to-gold/80 px-6 py-3 text-black hover:from-gold/90 hover:to-gold/70 transition-all shadow-lg shadow-gold/20 hover:shadow-gold/30"
                     >
                       <Plus className="h-4 w-4" />
-                      <span className="font-sans text-xs uppercase tracking-[0.15em]">
-                        Adicionar
+                      <span className="font-sans text-xs uppercase tracking-[0.15em] font-semibold">
+                        Adicionar Produto
                       </span>
                     </button>
                   </div>
@@ -650,6 +838,23 @@ export default function AdminPage() {
                             onChange={(e) => setNewProduct({ ...newProduct, valor: parseFloat(e.target.value) || 0 })}
                             className="w-full rounded-lg border border-gold/30 bg-[#09243D] px-4 py-2 text-cream focus:border-gold focus:outline-none"
                           />
+                        </div>
+                        <div>
+                          <label className="block font-sans text-xs uppercase tracking-[0.15em] text-cream/90 mb-2">
+                            Quantidade Disponível *
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            required
+                            value={newProduct.quantidade_disponivel}
+                            onChange={(e) => setNewProduct({ ...newProduct, quantidade_disponivel: parseInt(e.target.value) || 0 })}
+                            className="w-full rounded-lg border border-gold/30 bg-[#09243D] px-4 py-2 text-cream focus:border-gold focus:outline-none"
+                            placeholder="9999 para ilimitado"
+                          />
+                          <p className="mt-1 font-sans text-xs text-cream/60">
+                            Use 9999 para quantidade ilimitada
+                          </p>
                         </div>
                         <div className="md:col-span-2">
                           <label className="block font-sans text-xs uppercase tracking-[0.15em] text-cream/90 mb-2">
@@ -755,6 +960,23 @@ export default function AdminPage() {
                             className="w-full rounded-lg border border-gold/30 bg-[#061A2F] px-4 py-2 text-cream focus:border-gold focus:outline-none"
                           />
                         </div>
+                        <div>
+                          <label className="block font-sans text-xs uppercase tracking-[0.15em] text-cream/90 mb-2">
+                            Quantidade Disponível *
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            required
+                            value={editProductForm.quantidade_disponivel}
+                            onChange={(e) => setEditProductForm({ ...editProductForm, quantidade_disponivel: parseInt(e.target.value) || 0 })}
+                            className="w-full rounded-lg border border-gold/30 bg-[#061A2F] px-4 py-2 text-cream focus:border-gold focus:outline-none"
+                            placeholder="9999 para ilimitado"
+                          />
+                          <p className="mt-1 font-sans text-xs text-cream/60">
+                            Use 9999 para quantidade ilimitada
+                          </p>
+                        </div>
                         <div className="md:col-span-2">
                           <label className="block font-sans text-xs uppercase tracking-[0.15em] text-cream/90 mb-2">
                             Descrição
@@ -843,6 +1065,9 @@ export default function AdminPage() {
                           <th className="px-4 py-3 text-left font-sans text-xs uppercase tracking-[0.15em] text-gold">
                           Valor
                         </th>
+                          <th className="px-4 py-3 text-left font-sans text-xs uppercase tracking-[0.15em] text-gold">
+                          Quantidade
+                        </th>
                           <th className="px-4 py-3 text-right font-sans text-xs uppercase tracking-[0.15em] text-gold">
                             Ações
                           </th>
@@ -866,6 +1091,9 @@ export default function AdminPage() {
                             </td>
                             <td className="px-4 py-3 font-sans text-sm text-cream">
                               R$ {Number(product.valor).toFixed(2)}
+                            </td>
+                            <td className="px-4 py-3 font-sans text-sm text-cream">
+                              {product.quantidade_disponivel === 9999 ? 'Ilimitado' : product.quantidade_disponivel || 0}
                             </td>
                             <td className="px-4 py-3 text-right">
                               <div className="flex items-center justify-end gap-2">

@@ -12,6 +12,8 @@ type GiftItem = {
   valor: number
   imagem_url?: string
   ativo?: boolean
+  quantidade_disponivel?: number
+  disponivel?: boolean
 }
 
 type PaymentStatus = 'pending' | 'confirmed' | 'cancelled' | 'expired'
@@ -64,12 +66,12 @@ export default function GiftsPage() {
       console.error('Error fetching gifts:', error)
       // Fallback to hardcoded gifts if API fails
       setGifts([
-        { id: '1', nome: 'Jantar Romântico', descricao: 'Ajude-nos a celebrar com um jantar especial', valor: 150 },
-        { id: '2', nome: 'Lua de Mel', descricao: 'Contribua para nossa viagem dos sonhos', valor: 300 },
-        { id: '3', nome: 'Casa Nova', descricao: 'Presente para nosso novo lar', valor: 200 },
-        { id: '4', nome: 'Experiência', descricao: 'Momentos inesquecíveis juntos', valor: 100 },
-        { id: '5', nome: 'Aventura', descricao: 'Uma aventura para começar nossa vida', valor: 250 },
-        { id: '6', nome: 'Surpresa', descricao: 'Deixe-nos escolher algo especial', valor: 50 },
+        { id: '1', nome: 'Jantar Romântico', descricao: 'Ajude-nos a celebrar com um jantar especial', valor: 150, quantidade_disponivel: 10, disponivel: true },
+        { id: '2', nome: 'Lua de Mel', descricao: 'Contribua para nossa viagem dos sonhos', valor: 300, quantidade_disponivel: 5, disponivel: true },
+        { id: '3', nome: 'Casa Nova', descricao: 'Presente para nosso novo lar', valor: 200, quantidade_disponivel: 15, disponivel: true },
+        { id: '4', nome: 'Experiência', descricao: 'Momentos inesquecíveis juntos', valor: 100, quantidade_disponivel: 20, disponivel: true },
+        { id: '5', nome: 'Aventura', descricao: 'Uma aventura para começar nossa vida', valor: 250, quantidade_disponivel: 8, disponivel: true },
+        { id: '6', nome: 'Surpresa', descricao: 'Deixe-nos escolher algo especial', valor: 50, quantidade_disponivel: 9999, disponivel: true },
       ])
     }
   }
@@ -91,7 +93,10 @@ export default function GiftsPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Erro ao criar pagamento')
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || 'Erro ao criar pagamento'
+        console.error('Payment API error:', errorData)
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()
@@ -142,7 +147,10 @@ export default function GiftsPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Erro ao criar pagamento')
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || 'Erro ao criar pagamento'
+        console.error('Payment API error:', errorData)
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()
@@ -313,7 +321,11 @@ export default function GiftsPage() {
               {gifts.map((gift) => (
                 <div
                   key={gift.id}
-                  className="group relative overflow-hidden rounded-xl border border-gold/30 bg-[#09243D]/70 backdrop-blur-sm shadow-lg shadow-gold/10 transition-all duration-300 hover:shadow-gold/30 hover:scale-[1.03] hover:border-gold/50"
+                  className={`group relative overflow-hidden rounded-xl border bg-[#09243D]/70 backdrop-blur-sm shadow-lg transition-all duration-300 ${
+                    gift.disponivel === false
+                      ? 'border-red-500/30 opacity-60'
+                      : 'border-gold/30 hover:shadow-gold/30 hover:scale-[1.03] hover:border-gold/50'
+                  }`}
                 >
                   {/* Image Section */}
                   <div className="relative h-48 overflow-hidden bg-[#061A2F]">
@@ -321,7 +333,9 @@ export default function GiftsPage() {
                       <img
                         src={gift.imagem_url}
                         alt={gift.nome}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        className={`h-full w-full object-cover transition-transform duration-500 ${
+                          gift.disponivel === false ? '' : 'group-hover:scale-110'
+                        }`}
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">
@@ -335,6 +349,17 @@ export default function GiftsPage() {
                     <div className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full border border-gold/50 bg-[#061A2F]/80 backdrop-blur-sm shadow-lg">
                       <Gift className="h-5 w-5 text-gold" />
                     </div>
+
+                    {/* Sold out badge */}
+                    {gift.disponivel === false && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                        <div className="rounded-lg border-2 border-red-500 bg-red-500/20 px-4 py-2">
+                          <p className="font-serif text-lg font-semibold text-red-400">
+                            Esgotado
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Content Section */}
@@ -355,15 +380,29 @@ export default function GiftsPage() {
                         <p className="font-serif text-2xl font-semibold text-gold">
                           R$ {gift.valor.toFixed(2)}
                         </p>
+                        {gift.quantidade_disponivel !== undefined && gift.quantidade_disponivel < 9999 && (
+                          <p className="mt-1 font-sans text-xs text-cream/60">
+                            {gift.quantidade_disponivel} disponível
+                          </p>
+                        )}
                       </div>
                       
                       <button
                         onClick={() => handleGiftPayment(gift)}
-                        disabled={loading}
-                        className="group/btn relative overflow-hidden rounded-lg bg-gold/20 px-5 py-3 border border-gold/50 text-gold font-sans text-xs uppercase tracking-[0.2em] transition-all hover:bg-gold/30 hover:border-gold disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={loading || gift.disponivel === false}
+                        className={`group/btn relative overflow-hidden rounded-lg px-5 py-3 border font-sans text-xs uppercase tracking-[0.2em] transition-all ${
+                          gift.disponivel === false
+                            ? 'border-red-500/50 text-red-400 bg-red-500/10 cursor-not-allowed'
+                            : 'bg-gold/20 border-gold/50 text-gold hover:bg-gold/30 hover:border-gold disabled:opacity-50 disabled:cursor-not-allowed'
+                        }`}
                       >
                         <span className="relative z-10 flex items-center gap-2">
-                          {loading ? (
+                          {gift.disponivel === false ? (
+                            <>
+                              <XCircle className="h-4 w-4" />
+                              Esgotado
+                            </>
+                          ) : loading ? (
                             <>
                               <Clock className="h-4 w-4 animate-spin" />
                               Processando...
@@ -380,7 +419,9 @@ export default function GiftsPage() {
                   </div>
 
                   {/* Hover effect border */}
-                  <div className="absolute inset-0 rounded-xl border-2 border-gold/0 transition-all duration-300 group-hover:border-gold/30 pointer-events-none" />
+                  {gift.disponivel !== false && (
+                    <div className="absolute inset-0 rounded-xl border-2 border-gold/0 transition-all duration-300 group-hover:border-gold/30 pointer-events-none" />
+                  )}
                 </div>
               ))}
             </div>

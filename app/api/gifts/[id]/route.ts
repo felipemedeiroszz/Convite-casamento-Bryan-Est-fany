@@ -59,6 +59,13 @@ export async function PATCH(
       allowedFields.valor = v
     }
     if (body.imagem_url !== undefined) allowedFields.imagem_url = body.imagem_url
+    if (body.quantidade_disponivel !== undefined) {
+      const q = Number(body.quantidade_disponivel)
+      if (isNaN(q) || q < 0) {
+        return NextResponse.json({ error: `Quantidade inválida: ${body.quantidade_disponivel}` }, { status: 400 })
+      }
+      allowedFields.quantidade_disponivel = q
+    }
     if (body.ativo !== undefined) allowedFields.ativo = Boolean(body.ativo)
     if (body.ordem !== undefined) {
       const o = Number(body.ordem)
@@ -104,7 +111,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   if (!isSupabaseConfigured) {
     return NextResponse.json(
@@ -114,6 +121,7 @@ export async function DELETE(
   }
 
   try {
+    const params = await context.params
     const { error } = await supabase!
       .from('gifts')
       .delete()

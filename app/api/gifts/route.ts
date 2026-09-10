@@ -26,7 +26,14 @@ export async function GET() {
 
     if (error) throw error
 
-    return NextResponse.json(data || [])
+    // Add availability status to each gift
+    const giftsWithAvailability = (data || []).map(gift => ({
+      ...gift,
+      disponivel: (gift.quantidade_disponivel || 9999) > 0,
+      quantidade_disponivel: gift.quantidade_disponivel || 9999
+    }))
+
+    return NextResponse.json(giftsWithAvailability)
   } catch (error) {
     console.error('Error fetching gifts:', error)
     return NextResponse.json([])
@@ -43,7 +50,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json()
-    const { nome, descricao, valor, imagem_url } = body
+    const { nome, descricao, valor, imagem_url, quantidade_disponivel } = body
 
     const { data, error } = await supabase!
       .from('gifts')
@@ -52,6 +59,7 @@ export async function POST(request: Request) {
         descricao,
         valor,
         imagem_url,
+        quantidade_disponivel: quantidade_disponivel || 9999,
         ativo: true,
         ordem: 0,
       })

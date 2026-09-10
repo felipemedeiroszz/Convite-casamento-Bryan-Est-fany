@@ -74,11 +74,10 @@ export async function POST(request: NextRequest) {
             tipo: payment.tipo || 'gift',
           })
 
-          // Update gift status if needed
-          await supabase
-            .from('gifts')
-            .update({ status: 'received' })
-            .eq('id', contribution.gift_id)
+          // Decrement gift quantity
+          await supabase.rpc('decrement_gift_quantity', {
+            gift_id: contribution.gift_id
+          })
         } else if (payment.tipo === 'gravata') {
           // Add gravata contribution to gifts_received
           await supabase.from('gifts_received').insert({
@@ -112,8 +111,21 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Database error' }, { status: 500 })
       }
 
-      // If payment was linked to a gift, remove the contribution
-      if (payment) {
+      // If payment was linked to a gift, remove the contribution and restore quantity
+      if (payment && payment.tipo === 'gift') {
+        const { data: contribution } = await supabase
+          .from('gift_contributions')
+          .select('gift_id')
+          .eq('payment_id', payment.id)
+          .single()
+
+        if (contribution && contribution.gift_id) {
+          // Restore gift quantity
+          await supabase.rpc('increment_gift_quantity', {
+            gift_id: contribution.gift_id
+          })
+        }
+
         await supabase
           .from('gift_contributions')
           .delete()

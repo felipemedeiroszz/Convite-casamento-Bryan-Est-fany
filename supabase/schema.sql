@@ -64,6 +64,7 @@ create table if not exists gifts (
   imagem_url text,
   ativo boolean default true,
   ordem integer default 0,
+  quantidade_disponivel integer default 9999,
   criado_em timestamp with time zone default now()
 );
 
@@ -98,6 +99,26 @@ create index if not exists idx_payments_status on payments(status);
 create index if not exists idx_payments_asaas_id on payments(asaas_payment_id);
 create index if not exists idx_gift_contributions_gift_id on gift_contributions(gift_id);
 create index if not exists idx_gift_contributions_rsvp_id on gift_contributions(rsvp_id);
+
+-- Create function to safely decrement gift quantity
+create or replace function decrement_gift_quantity(gift_id uuid)
+returns void as $$
+begin
+  update gifts
+  set quantidade_disponivel = greatest(quantidade_disponivel - 1, 0)
+  where id = gift_id;
+end;
+$$ language plpgsql;
+
+-- Create function to safely increment gift quantity (for cancelled payments)
+create or replace function increment_gift_quantity(gift_id uuid)
+returns void as $$
+begin
+  update gifts
+  set quantidade_disponivel = quantidade_disponivel + 1
+  where id = gift_id;
+end;
+$$ language plpgsql;
 
 -- Enable Row Level Security
 alter table guests enable row level security;
@@ -134,11 +155,11 @@ create policy "Public read access for gifts_received" on gifts_received for sele
 create policy "Public insert for gifts_received" on gifts_received for insert with check (true);
 
 -- Insert sample gifts
-insert into gifts (nome, descricao, valor, ordem) values
-  ('Lua de Mel', 'Ajude-nos a realizar nosso sonho de lua de mel', 500.00, 1),
-  ('Jantar Romântico', 'Um jantar especial para comemorar nosso amor', 300.00, 2),
-  ('Decoração Casa Nova', 'Para tornar nosso lar ainda mais especial', 200.00, 3),
-  ('Aparelho de Cozinha', 'Equipamentos para nossa nova vida juntos', 150.00, 4),
-  ('Livros e Cultura', 'Investimento em nosso crescimento conjunto', 100.00, 5),
-  ('Valor Livre', 'Escolha o valor que deseja contribuir', 50.00, 6)
+insert into gifts (nome, descricao, valor, ordem, quantidade_disponivel) values
+  ('Lua de Mel', 'Ajude-nos a realizar nosso sonho de lua de mel', 500.00, 1, 5),
+  ('Jantar Romântico', 'Um jantar especial para comemorar nosso amor', 300.00, 2, 10),
+  ('Decoração Casa Nova', 'Para tornar nosso lar ainda mais especial', 200.00, 3, 15),
+  ('Aparelho de Cozinha', 'Equipamentos para nossa nova vida juntos', 150.00, 4, 8),
+  ('Livros e Cultura', 'Investimento em nosso crescimento conjunto', 100.00, 5, 20),
+  ('Valor Livre', 'Escolha o valor que deseja contribuir', 50.00, 6, 9999)
 on conflict do nothing;
