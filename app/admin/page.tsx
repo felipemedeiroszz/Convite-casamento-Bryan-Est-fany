@@ -163,7 +163,9 @@ export default function AdminPage() {
 
   const sendWhatsAppInvite = (guest: Guest) => {
     if (!guest.whatsapp) return
-    const message = encodeURIComponent(`Olá ${guest.nome_completo}! 🎉\n\nTemos uma notícia muito especial para compartilhar com você. Estamos nos casando e sua presença tornaria este dia ainda mais inesquecível!\n\nPor favor, confirme sua presença através do nosso site de casamento.\n\nCom amor,\nB & E`)
+    const baseUrl = window.location.origin
+    const rsvpUrl = `${baseUrl}/rsvp`
+    const message = encodeURIComponent(`Olá ${guest.nome_completo}! 💍✨\n\nTemos uma notícia muito especial para compartilhar com você! Estamos nos casando e sua presença tornaria este dia ainda mais inesquecível! 🎉\n\nPara confirmar sua presença, acesse diretamente:\n${rsvpUrl}\n\nContamos com você para celebrar este momento tão especial conosco! 💕\n\nCom amor,\nB & E`)
     window.open(`https://wa.me/${guest.whatsapp.replace(/\D/g, '')}?text=${message}`, '_blank')
   }
 
