@@ -76,10 +76,13 @@ export function Story() {
             {/* Story text */}
             <div className="mt-12 space-y-4 font-sans text-lg leading-relaxed text-white">
               <p className="text-pretty">
-                Bryan e Estéfany se conheceram quando menos esperavam e, desde então, escrevem juntos uma história feita de cumplicidade, risadas e sonhos compartilhados.
+                Tudo começou em 12 de junho de 2022, quando Deus cruzou nossos caminhos e, em Seus planos perfeitos, transformou um encontro em uma linda história de amor.
               </p>
               <p className="text-pretty">
-                Depois de tantos capítulos vividos lado a lado, chegou o momento de celebrar o amor diante de quem mais amamos. Será uma honra ter você presente neste dia tão especial.
+                Hoje, depois de tantos momentos, sonhos e bênçãos compartilhadas, Deus nos permite viver um novo capítulo dessa história: o nosso para sempre.
+              </p>
+              <p className="text-pretty">
+                Com o coração cheio de gratidão e amor, Estefany & Bryan convidam você para celebrar conosco o dia em que diremos SIM, diante de Deus e de todos aqueles que amamos.
               </p>
             </div>
           </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { LayoutDashboard, Users, Package, DollarSign, Settings, Plus, Trash2, Edit, Lock, LogOut, TrendingUp, Gift, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { LayoutDashboard, Users, Package, DollarSign, Settings, Plus, Trash2, Edit, Lock, LogOut, TrendingUp, Gift, Clock, CheckCircle, XCircle, AlertCircle, MessageSquare, Send, QrCode, RefreshCw, Radio } from 'lucide-react'
 
 type Tab = 'dashboard' | 'convidados' | 'produtos' | 'confirmados' | 'financeiro' | 'presentes' | 'configuracoes'
 
@@ -61,6 +61,18 @@ export default function AdminPage() {
   const [uploadError, setUploadError] = useState('')
   const [productError, setProductError] = useState('')
   const [giftsReceived, setGiftsReceived] = useState<GiftReceived[]>([])
+  
+  // WhatsApp states
+  const [whatsappQRCode, setWhatsappQRCode] = useState<string | null>(null)
+  const [whatsappStatus, setWhatsappStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected')
+  const [selectedGuests, setSelectedGuests] = useState<string[]>([])
+  const [sendingWhatsApp, setSendingWhatsApp] = useState(false)
+  const [sendResults, setSendResults] = useState<{phoneNumber: string, success: boolean, message: string}[]>([])
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false)
+  const [showBroadcastModal, setShowBroadcastModal] = useState(false)
+  const [broadcastMessage, setBroadcastMessage] = useState('')
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [guestToDelete, setGuestToDelete] = useState<string | null>(null)
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
@@ -161,13 +173,7 @@ export default function AdminPage() {
     }
   }
 
-  const sendWhatsAppInvite = (guest: Guest) => {
-    if (!guest.whatsapp) return
-    const baseUrl = window.location.origin
-    const rsvpUrl = `${baseUrl}/rsvp`
-    const message = encodeURIComponent(`Olá ${guest.nome_completo}! 💍✨\n\nTemos uma notícia muito especial para compartilhar com você! Estamos nos casando e sua presença tornaria este dia ainda mais inesquecível! 🎉\n\nPara confirmar sua presença, acesse diretamente:\n${rsvpUrl}\n\nContamos com você para celebrar este momento tão especial conosco! 💕\n\nCom amor,\nB & E`)
-    window.open(`https://wa.me/${guest.whatsapp.replace(/\D/g, '')}?text=${message}`, '_blank')
-  }
+
 
   const handleImageUpload = async (file: File, target: 'new' | 'edit' = 'new') => {
     setUploadingImage(true)
@@ -284,9 +290,17 @@ export default function AdminPage() {
   }
 
   const handleDeleteGuest = async (id: string) => {
+    setGuestToDelete(id)
+    setShowDeleteModal(true)
+  }
+
+  const confirmDeleteGuest = async () => {
+    if (!guestToDelete) return
     try {
-      await fetch(`/api/guests/${id}`, { method: 'DELETE' })
+      await fetch(`/api/guests/${guestToDelete}`, { method: 'DELETE' })
       fetchGuests()
+      setShowDeleteModal(false)
+      setGuestToDelete(null)
     } catch (error) {
       console.error('Error deleting guest:', error)
     }
@@ -306,6 +320,140 @@ export default function AdminPage() {
       case 'declined': return 'Recusou'
       default: return 'Pendente'
     }
+  }
+
+  // WhatsApp functions
+  const checkWhatsAppStatus = async () => {
+    try {
+      const response = await fetch('/api/whatsapp/qr')
+      const data = await response.json()
+      
+      console.log('Status WhatsApp:', data)
+      
+      if (data.status === 'ready') {
+        setWhatsappStatus('connected')
+        setWhatsappQRCode(null)
+      } else if (data.qrCode) {
+        setWhatsappStatus('connecting')
+        setWhatsappQRCode(data.qrCode)
+      } else {
+        setWhatsappStatus('connecting')
+      }
+    } catch (error) {
+      console.error('Erro ao verificar status WhatsApp:', error)
+    }
+  }
+
+  const connectWhatsApp = async () => {
+    // Se já estiver conectado, resetar o estado para permitir reconexão
+    if (whatsappStatus === 'connected') {
+      try {
+        await fetch('/api/whatsapp/reset', { method: 'POST' })
+        setWhatsappStatus('disconnected')
+        setWhatsappQRCode(null)
+        // Pequeno delay para garantir que o reset foi processado
+        await new Promise(resolve => setTimeout(resolve, 500))
+      } catch (error) {
+        console.error('Erro ao resetar estado:', error)
+      }
+    }
+    
+    setWhatsappStatus('connecting')
+    setWhatsappQRCode(null)
+    await checkWhatsAppStatus()
+    
+    // Polling mais frequente para verificar se o QR code foi gerado
+    const interval = setInterval(async () => {
+      await checkWhatsAppStatus()
+    }, 1000)
+    
+    // Parar polling após 3 minutos
+    setTimeout(() => clearInterval(interval), 180000)
+  }
+
+  const toggleGuestSelection = (guestId: string) => {
+    setSelectedGuests(prev => 
+      prev.includes(guestId) 
+        ? prev.filter(id => id !== guestId)
+        : [...prev, guestId]
+    )
+  }
+
+  const selectAllGuests = () => {
+    setSelectedGuests(guests.map(g => g.id))
+  }
+
+  const deselectAllGuests = () => {
+    setSelectedGuests([])
+  }
+
+  const sendWhatsAppInvite = (guest: Guest) => {
+    if (!guest.whatsapp) return
+    const baseUrl = window.location.origin
+    const rsvpUrl = `${baseUrl}/rsvp`
+    const imageUrl = `${baseUrl}/convite.jpeg`
+    const message = encodeURIComponent(`Olá ${guest.nome_completo}!\n\nTemos uma notícia muito especial para compartilhar com você! Estamos nos casando e sua presença tornaria este dia ainda mais inesquecível!\n\n🎨 Veja nosso convite: ${imageUrl}\n\nPara confirmar sua presença, acesse diretamente:\n${rsvpUrl}\n\nContamos com você para celebrar este momento tão especial conosco!\n\nCom amor,\nBryan e Estéfany`)
+    window.open(`https://wa.me/${guest.whatsapp.replace(/\D/g, '')}?text=${message}`, '_blank')
+  }
+
+  const sendWhatsAppMessages = () => {
+    if (selectedGuests.length === 0) {
+      alert('Selecione pelo menos um convidado')
+      return
+    }
+
+    const selectedGuestsData = guests.filter(g => selectedGuests.includes(g.id) && g.whatsapp)
+    
+    if (selectedGuestsData.length === 0) {
+      alert('Nenhum convidado selecionado tem WhatsApp cadastrado')
+      return
+    }
+
+    const baseUrl = window.location.origin
+    const rsvpUrl = `${baseUrl}/rsvp`
+    const imageUrl = `${baseUrl}/convite.jpeg`
+
+    // Enviar mensagem para cada convidado selecionado
+    selectedGuestsData.forEach((guest, index) => {
+      const message = encodeURIComponent(`Olá ${guest.nome_completo}!\n\nTemos uma notícia muito especial para compartilhar com você! Estamos nos casando e sua presença tornaria este dia ainda mais inesquecível!\n\n🎨 Veja nosso convite: ${imageUrl}\n\nPara confirmar sua presença, acesse diretamente:\n${rsvpUrl}\n\nContamos com você para celebrar este momento tão especial conosco!\n\nCom amor,\nBryan e Estéfany`)
+      const whatsappUrl = `https://wa.me/${guest.whatsapp?.replace(/\D/g, '') || ''}?text=${message}`
+      
+      // Abrir cada link em uma nova aba com delay maior para evitar bloqueio de popup
+      setTimeout(() => {
+        const newWindow = window.open(whatsappUrl, '_blank')
+        if (!newWindow) {
+          alert('O navegador bloqueou a abertura de múltiplas abas. Por favor, permita popups para este site.')
+        }
+      }, index * 1000) // Aumentado para 1 segundo entre cada abertura
+    })
+
+    alert(`Enviando ${selectedGuestsData.length} convites! As abas do WhatsApp serão abertas uma por uma.`)
+    setShowWhatsAppModal(false)
+    setSelectedGuests([])
+    setSendingWhatsApp(false)
+  }
+
+  const createBroadcast = () => {
+    const guestsWithPhone = guests.filter(g => g.whatsapp)
+    const phoneNumbers = guestsWithPhone.map(g => g.whatsapp?.replace(/\D/g, '') || '').filter(Boolean)
+    
+    if (phoneNumbers.length === 0) {
+      alert('Nenhum convidado tem WhatsApp cadastrado')
+      return
+    }
+
+    // Abrir WhatsApp Web
+    window.open('https://web.whatsapp.com/', '_blank')
+    
+    // Criar lista de números para copiar
+    const phoneList = phoneNumbers.join('\n')
+    navigator.clipboard.writeText(phoneList).then(() => {
+      alert(`✅ ${phoneNumbers.length} números copiados!\n\n📋 Alternativas de envio:\n\n1. Sistema de links (recomendado):\n   - Use o botão "Enviar Convites" acima\n   - Abre abas automaticamente com mensagens personalizadas\n\n2. Manual via WhatsApp Web:\n   - Crie grupos com os convidados\n   - Envie a mensagem com a imagem do convite\n\n3. Comunidade WhatsApp:\n   - Crie uma comunidade e adicione os grupos\n   - Envie anúncios para todos`)
+    }).catch(() => {
+      alert(`✅ ${phoneNumbers.length} números disponíveis\n\nNúmeros:\n${phoneList}`)
+    })
+    
+    setShowBroadcastModal(false)
   }
 
   if (!isAuthenticated) {
@@ -594,15 +742,26 @@ export default function AdminPage() {
                       </h2>
                       <p className="font-sans text-sm text-cream/70">Gerencie sua lista de convidados</p>
                     </div>
-                    <button
-                      onClick={() => setShowAddGuest(true)}
-                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-gold to-gold/80 px-6 py-3 text-black hover:from-gold/90 hover:to-gold/70 transition-all shadow-lg shadow-gold/20 hover:shadow-gold/30"
-                    >
-                      <Plus className="h-4 w-4" />
-                      <span className="font-sans text-xs uppercase tracking-[0.15em] font-semibold">
-                        Adicionar Convidado
-                      </span>
-                    </button>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setShowAddGuest(true)}
+                        className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-gold to-gold/80 px-6 py-3 text-black hover:from-gold/90 hover:to-gold/70 transition-all shadow-lg shadow-gold/20 hover:shadow-gold/30"
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span className="font-sans text-xs uppercase tracking-[0.15em] font-semibold">
+                          Adicionar Convidado
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => setShowWhatsAppModal(true)}
+                        className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-green-500 to-green-600 px-6 py-3 text-white hover:from-green-600 hover:to-green-700 transition-all shadow-lg shadow-green-500/20 hover:shadow-green-500/30"
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        <span className="font-sans text-xs uppercase tracking-[0.15em] font-semibold">
+                          Enviar WhatsApp
+                        </span>
+                      </button>
+                    </div>
                   </div>
 
                   {showAddGuest && (
@@ -692,6 +851,14 @@ export default function AdminPage() {
                         <thead className="bg-[#09243D]/80 border-b border-gold/20">
                           <tr>
                             <th className="px-6 py-4 text-left font-sans text-xs uppercase tracking-[0.15em] text-gold">
+                              <input
+                                type="checkbox"
+                                checked={selectedGuests.length === guests.length && guests.length > 0}
+                                onChange={(e) => e.target.checked ? selectAllGuests() : deselectAllGuests()}
+                                className="rounded border-gold/30 bg-[#061A2F] text-gold focus:ring-gold"
+                              />
+                            </th>
+                            <th className="px-6 py-4 text-left font-sans text-xs uppercase tracking-[0.15em] text-gold">
                               Nome
                             </th>
                             <th className="px-6 py-4 text-left font-sans text-xs uppercase tracking-[0.15em] text-gold">
@@ -714,6 +881,14 @@ export default function AdminPage() {
                         <tbody>
                           {guests.map((guest) => (
                             <tr key={guest.id} className="border-t border-gold/10 hover:bg-gold/5 transition-colors">
+                              <td className="px-6 py-4">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedGuests.includes(guest.id)}
+                                  onChange={() => toggleGuestSelection(guest.id)}
+                                  className="rounded border-gold/30 bg-[#061A2F] text-gold focus:ring-gold"
+                                />
+                              </td>
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
                                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/20 border border-gold/30">
@@ -751,17 +926,6 @@ export default function AdminPage() {
                               </td>
                               <td className="px-6 py-4 text-right">
                                 <div className="flex items-center justify-end gap-2">
-                                  {guest.whatsapp && (
-                                    <button
-                                      onClick={() => sendWhatsAppInvite(guest)}
-                                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/20 border border-green-500/30 text-green-400 hover:bg-green-500/30 transition-all"
-                                      title="Enviar convite pelo WhatsApp"
-                                    >
-                                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                                      </svg>
-                                    </button>
-                                  )}
                                   <button
                                     onClick={() => handleDeleteGuest(guest.id)}
                                     className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition-all"
@@ -914,7 +1078,7 @@ export default function AdminPage() {
                           type="button"
                           onClick={() => {
                             setShowAddProduct(false)
-                            setNewProduct({ nome: '', descricao: '', valor: 0, imagem_url: '' })
+                            setNewProduct({ nome: '', descricao: '', valor: 0, imagem_url: '', quantidade_disponivel: 0 })
                             setUploadError('')
                             setProductError('')
                           }}
@@ -1446,6 +1610,205 @@ export default function AdminPage() {
           </main>
         </div>
       </div>
+
+      {/* WhatsApp Modal */}
+      {showWhatsAppModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="rounded-2xl border border-gold/30 bg-gradient-to-br from-[#061A2F] to-[#09243D] p-8 shadow-2xl shadow-gold/20 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/20 border border-green-500/30">
+                  <MessageSquare className="h-6 w-6 text-green-400" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-2xl text-gold-gradient">Enviar Convites WhatsApp</h3>
+                  <p className="font-sans text-xs text-cream/60">Selecione os convidados e envie o convite</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowWhatsAppModal(false)}
+                className="text-cream/60 hover:text-gold transition-colors"
+              >
+                <XCircle className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* WhatsApp Connection Section */}
+            <div className="mb-6 rounded-xl border border-gold/30 bg-[#09243D]/50 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20 border border-blue-500/30">
+                  <MessageSquare className="h-5 w-5 text-blue-400" />
+                </div>
+                <div>
+                  <p className="font-sans text-sm font-semibold text-cream">
+                    Envio via WhatsApp Web
+                  </p>
+                  <p className="font-sans text-xs text-cream/60">
+                    Sistema de envio automático via links
+                  </p>
+                </div>
+              </div>
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                <p className="font-sans text-xs text-cream/80 mb-2">
+                  💡 <strong>Como funciona:</strong>
+                </p>
+                <ul className="font-sans text-xs text-cream/60 space-y-1 list-disc list-inside">
+                  <li>Selecione os convidados</li>
+                  <li>Clique em "Enviar Convites"</li>
+                  <li>O sistema abre automaticamente abas do WhatsApp Web</li>
+                  <li>Cada mensagem é personalizada com o nome do convidado</li>
+                  <li>Inclui link da imagem do convite e RSVP</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Broadcast Section */}
+            <div className="mb-6 rounded-xl border border-gold/30 bg-[#09243D]/50 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/20 border border-purple-500/30">
+                  <Radio className="h-5 w-5 text-purple-400" />
+                </div>
+                <div>
+                  <p className="font-sans text-sm font-semibold text-cream">
+                    Copiar Números WhatsApp
+                  </p>
+                  <p className="font-sans text-xs text-cream/60">
+                    Copia todos os números para criar grupos/comunidades
+                  </p>
+                </div>
+              </div>
+              <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4">
+                <p className="font-sans text-xs text-cream/80 mb-2">
+                  � <strong>Alternativas de envio:</strong>
+                </p>
+                <ul className="font-sans text-xs text-cream/60 space-y-1 list-disc list-inside">
+                  <li><strong>Sistema de links</strong>: Abre abas automáticas (recomendado)</li>
+                  <li><strong>Grupos</strong>: Crie grupos no WhatsApp e envie</li>
+                  <li><strong>Comunidade</strong>: Crie comunidade e envie anúncios</li>
+                </ul>
+              </div>
+              <button
+                onClick={createBroadcast}
+                className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 px-6 py-3 text-white hover:from-purple-600 hover:to-purple-700 transition-all shadow-lg shadow-purple-500/20 font-sans text-xs uppercase tracking-[0.15em] font-semibold"
+              >
+                <Radio className="h-4 w-4" />
+                Copiar Números
+              </button>
+            </div>
+
+            {/* Selection Info */}
+            <div className="mb-6 rounded-xl border border-gold/30 bg-[#09243D]/50 p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-sans text-sm text-cream/80">
+                    Convidados selecionados: <span className="text-gold font-semibold">{selectedGuests.length}</span>
+                  </p>
+                  <p className="font-sans text-xs text-cream/60 mt-1">
+                    {guests.filter(g => selectedGuests.includes(g.id) && g.whatsapp).length} com WhatsApp cadastrado
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={selectAllGuests}
+                    className="rounded-lg border border-gold/30 px-3 py-2 text-cream hover:bg-gold/10 transition-all font-sans text-xs uppercase tracking-[0.15em]"
+                  >
+                    Selecionar Todos
+                  </button>
+                  <button
+                    onClick={deselectAllGuests}
+                    className="rounded-lg border border-gold/30 px-3 py-2 text-cream hover:bg-gold/10 transition-all font-sans text-xs uppercase tracking-[0.15em]"
+                  >
+                    Limpar Seleção
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Send Button */}
+            <div className="flex gap-3">
+              <button
+                onClick={sendWhatsAppMessages}
+                disabled={sendingWhatsApp || selectedGuests.length === 0}
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-green-500 to-green-600 px-6 py-3 text-white hover:from-green-600 hover:to-green-700 transition-all shadow-lg shadow-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed font-sans text-xs uppercase tracking-[0.15em] font-semibold"
+              >
+                {sendingWhatsApp ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    Enviar Convites
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => setShowWhatsAppModal(false)}
+                className="rounded-xl border border-gold/30 px-6 py-3 text-cream hover:bg-gold/10 transition-all font-sans text-xs uppercase tracking-[0.15em]"
+              >
+                Fechar
+              </button>
+            </div>
+
+            {/* Results */}
+            {sendResults.length > 0 && (
+              <div className="mt-6 rounded-xl border border-gold/30 bg-[#09243D]/50 p-6">
+                <h4 className="font-sans text-sm font-semibold text-gold mb-4">Resultados do Envio</h4>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {sendResults.map((result, index) => (
+                    <div key={index} className={`flex items-center justify-between p-3 rounded-lg ${
+                      result.success ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'
+                    }`}>
+                      <span className="font-sans text-xs text-cream/80">{result.phoneNumber}</span>
+                      <span className={`font-sans text-xs ${result.success ? 'text-green-400' : 'text-red-400'}`}>
+                        {result.success ? 'Enviado' : result.message}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="rounded-2xl border border-red-500/30 bg-gradient-to-br from-[#061A2F] to-[#09243D] p-8 shadow-2xl shadow-red-500/20 max-w-md w-full">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/20 border border-red-500/30">
+                <AlertCircle className="h-6 w-6 text-red-400" />
+              </div>
+              <div>
+                <h3 className="font-serif text-xl text-cream">Excluir Convidado</h3>
+                <p className="font-sans text-xs text-cream/60">Esta ação não pode ser desfeita</p>
+              </div>
+            </div>
+            <p className="font-sans text-sm text-cream/80 mb-6">
+              Tem certeza que deseja excluir este convidado? Esta ação é irreversível.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false)
+                  setGuestToDelete(null)
+                }}
+                className="flex-1 rounded-xl border border-gold/30 px-6 py-3 text-cream hover:bg-gold/10 transition-all font-sans text-xs uppercase tracking-[0.15em]"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDeleteGuest}
+                className="flex-1 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-6 py-3 text-white hover:from-red-600 hover:to-red-700 transition-all shadow-lg shadow-red-500/20 font-sans text-xs uppercase tracking-[0.15em] font-semibold"
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

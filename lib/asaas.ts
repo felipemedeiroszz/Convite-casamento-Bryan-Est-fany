@@ -263,7 +263,8 @@ export async function createPixPayment(
         value: data.value,
         description: data.description,
         billingType: 'PIX',
-        // dueDate not used for PIX payments - expiration is controlled by QR code
+        // dueDate: Adicionado para compatibilidade com API Asaas (3 dias no futuro)
+        dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         externalReference: data.externalReference,
       }),
       cache: 'no-store',

@@ -6,17 +6,17 @@ export const wedding = {
     iniciais: 'B & E',
   },
   // Data e horário (placeholder — ajuste depois)
-  data: '2026-11-15T16:00:00',
-  dataExtenso: '15 de Novembro de 2026',
-  diaSemana: 'Domingo',
-  horario: '16h00',
+  data: '2026-11-21T19:30:00',
+  dataExtenso: '21 de Novembro de 2026',
+  diaSemana: 'Sábado',
+  horario: '19:30',
   // Local (placeholder — ajuste depois)
   local: {
-    nome: 'Espaço Villa Jardim',
-    endereco: 'Av. das Acácias, 1200 — Jardim Botânico',
-    cidade: 'São Paulo — SP',
+    nome: 'Volta Redonda',
+    endereco: 'Volta Redonda',
+    cidade: 'Volta Redonda - RJ',
     // Substitua pelo link real do Google Maps
-    mapaUrl: 'https://www.google.com/maps/search/?api=1&query=Jardim+Botanico+Sao+Paulo',
+    mapaUrl: 'https://www.google.com/maps/search/?api=1&query=Volta+Redonda+RJ',
   },
   // Link da lista de presentes (placeholder — ajuste depois)
   listaPresentesUrl: '#lista-presentes',
