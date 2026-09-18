@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { LayoutDashboard, Users, Package, DollarSign, Settings, Plus, Trash2, Edit, Lock, LogOut, TrendingUp, Gift, Clock, CheckCircle, XCircle, AlertCircle, MessageSquare, Send, QrCode, RefreshCw, Radio } from 'lucide-react'
+import { LayoutDashboard, Users, Package, DollarSign, Settings, Plus, Trash2, Edit, Lock, LogOut, TrendingUp, Gift, Clock, CheckCircle, XCircle, AlertCircle, MessageSquare, Send, QrCode, RefreshCw, Radio, TestTube } from 'lucide-react'
 
 type Tab = 'dashboard' | 'convidados' | 'produtos' | 'confirmados' | 'financeiro' | 'presentes' | 'configuracoes'
 
@@ -73,6 +73,11 @@ export default function AdminPage() {
   const [broadcastMessage, setBroadcastMessage] = useState('')
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [guestToDelete, setGuestToDelete] = useState<string | null>(null)
+  
+  // Test webhook states
+  const [testPaymentId, setTestPaymentId] = useState('')
+  const [testingWebhook, setTestingWebhook] = useState(false)
+  const [webhookTestResult, setWebhookTestResult] = useState<{success: boolean, message: string} | null>(null)
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
@@ -454,6 +459,37 @@ export default function AdminPage() {
     })
     
     setShowBroadcastModal(false)
+  }
+
+  const handleTestWebhook = async () => {
+    if (!testPaymentId) {
+      alert('Por favor, insira o ID do pagamento')
+      return
+    }
+
+    setTestingWebhook(true)
+    setWebhookTestResult(null)
+
+    try {
+      const response = await fetch('/api/test-webhook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentId: testPaymentId }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setWebhookTestResult({ success: true, message: 'Webhook testado com sucesso! Pagamento confirmado.' })
+        fetchGiftsReceived() // Refresh gifts received
+      } else {
+        setWebhookTestResult({ success: false, message: data.error || 'Erro ao testar webhook' })
+      }
+    } catch (error) {
+      setWebhookTestResult({ success: false, message: 'Erro de conexão' })
+    } finally {
+      setTestingWebhook(false)
+    }
   }
 
   if (!isAuthenticated) {
@@ -1502,6 +1538,50 @@ export default function AdminPage() {
                     {giftsReceived.length === 0 && (
                       <div className="px-4 py-8 text-center font-sans text-cream/60">
                         Nenhum presente recebido ainda
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Test Webhook Section */}
+                  <div className="mt-8 rounded-lg border border-gold/30 bg-[#061A2F] p-6">
+                    <h3 className="font-serif text-xl text-gold-gradient mb-4">Testar Webhook de Pagamento</h3>
+                    <p className="font-sans text-sm text-cream/70 mb-4">
+                      Simule a confirmação de pagamento sem precisar fazer um pagamento real. 
+                      Insira o ID do pagamento no banco de dados para testar o webhook.
+                    </p>
+                    <div className="flex gap-4">
+                      <input
+                        type="text"
+                        value={testPaymentId}
+                        onChange={(e) => setTestPaymentId(e.target.value)}
+                        placeholder="ID do pagamento (ex: uuid do banco)"
+                        className="flex-1 rounded-lg border border-gold/30 bg-[#09243D] px-4 py-3 font-sans text-sm text-cream placeholder:text-cream/40 focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold transition-colors"
+                      />
+                      <button
+                        onClick={handleTestWebhook}
+                        disabled={testingWebhook}
+                        className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-green-500 to-green-600 px-6 py-3 text-white hover:from-green-600 hover:to-green-700 transition-all shadow-lg shadow-green-500/20 hover:shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {testingWebhook ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                            <span className="font-sans text-xs uppercase tracking-[0.15em]">Testando...</span>
+                          </>
+                        ) : (
+                          <>
+                            <TestTube className="h-4 w-4" />
+                            <span className="font-sans text-xs uppercase tracking-[0.15em]">Testar Webhook</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    {webhookTestResult && (
+                      <div className={`mt-4 p-4 rounded-lg border ${
+                        webhookTestResult.success 
+                          ? 'bg-green-500/10 border-green-500/30 text-green-400' 
+                          : 'bg-red-500/10 border-red-500/30 text-red-400'
+                      }`}>
+                        <p className="font-sans text-sm">{webhookTestResult.message}</p>
                       </div>
                     )}
                   </div>
