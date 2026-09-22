@@ -76,7 +76,7 @@ export function Story() {
             {/* Story text */}
             <div className="mt-12 space-y-4 font-sans text-lg leading-relaxed text-white">
               <p className="text-pretty">
-                Tudo começou em 12 de junho de 2022, quando Deus cruzou nossos caminhos e, em Seus planos perfeitos, transformou um encontro em uma linda história de amor.
+                Tudo começou em 12 de junho de 2022, quando Deus cruzou nossos caminhos e, em seus planos perfeitos, transformou um encontro em uma linda história de amor.
               </p>
               <p className="text-pretty">
                 Hoje, depois de tantos momentos, sonhos e bênçãos compartilhadas, Deus nos permite viver um novo capítulo dessa história: o nosso para sempre.
