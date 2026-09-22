@@ -49,6 +49,11 @@ export default function GiftsPage() {
   const [gravataName, setGravataName] = useState('')
   const [gravataMessage, setGravataMessage] = useState('')
 
+  // Gift modal states
+  const [showGiftModal, setShowGiftModal] = useState(false)
+  const [giftName, setGiftName] = useState('')
+  const [giftMessage, setGiftMessage] = useState('')
+
   useEffect(() => {
     fetchGifts()
   }, [])
@@ -76,19 +81,32 @@ export default function GiftsPage() {
     }
   }
 
-  const handleGiftPayment = async (gift: GiftItem) => {
+  const handleGiftPayment = (gift: GiftItem) => {
     setSelectedGift(gift)
+    setShowGiftModal(true)
+  }
+
+  const handleGiftModalSubmit = async () => {
+    if (!giftName.trim()) {
+      alert('Por favor, informe seu nome')
+      return
+    }
+
+    if (!selectedGift) return
+
     setLoading(true)
-    
+    setShowGiftModal(false)
+
     try {
       const response = await fetch('/api/payments/pix', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          giftId: gift.id,
-          valor: gift.valor,
-          nome: 'Convidado',
+          giftId: selectedGift.id,
+          valor: selectedGift.valor,
+          nome: giftName,
           email: '',
+          mensagem: giftMessage,
         }),
       })
 
@@ -109,7 +127,7 @@ export default function GiftsPage() {
       })
       setShowPaymentModal(true)
       setPaymentStatus('pending')
-      
+
       // Start polling for payment status
       startPaymentPolling(data.payment.id)
     } catch (error) {
@@ -117,6 +135,8 @@ export default function GiftsPage() {
       alert('Erro ao processar pagamento. Tente novamente.')
     } finally {
       setLoading(false)
+      setGiftName('')
+      setGiftMessage('')
     }
   }
 
@@ -604,7 +624,95 @@ export default function GiftsPage() {
             </div>
           </div>
         )}
-        
+
+        {/* Gift Info Modal */}
+        {showGiftModal && selectedGift && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="relative max-w-md w-full rounded-lg border border-gold/40 bg-[#09243D]/95 p-8 backdrop-blur-md shadow-2xl shadow-gold/20">
+              <button
+                onClick={() => setShowGiftModal(false)}
+                className="absolute top-4 right-4 text-gold/60 hover:text-gold transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+
+              <div className="text-center mb-6">
+                <Gift className="h-12 w-12 text-gold mx-auto mb-4" />
+                <h3 className="font-serif text-2xl text-gold-gradient mb-2">
+                  Presentear
+                </h3>
+                <p className="font-sans text-sm text-cream/80">
+                  {selectedGift.nome}
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="gift-name"
+                    className="mb-2 block font-sans text-xs uppercase tracking-[0.25em] text-gold/90"
+                  >
+                    Seu Nome *
+                  </label>
+                  <input
+                    id="gift-name"
+                    type="text"
+                    required
+                    value={giftName}
+                    onChange={(e) => setGiftName(e.target.value)}
+                    placeholder="Seu nome completo"
+                    className="w-full rounded-lg border border-gold/30 bg-[#061A2F] px-4 py-3 font-sans text-sm text-cream placeholder:text-muted-foreground/60 focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="gift-message"
+                    className="mb-2 block font-sans text-xs uppercase tracking-[0.25em] text-gold/90"
+                  >
+                    Mensagem para o Casal
+                  </label>
+                  <textarea
+                    id="gift-message"
+                    rows={3}
+                    maxLength={300}
+                    value={giftMessage}
+                    onChange={(e) => setGiftMessage(e.target.value)}
+                    placeholder="Uma mensagem carinhosa para os noivos..."
+                    className="w-full resize-none rounded-lg border border-gold/30 bg-[#061A2F] px-4 py-3 font-sans text-sm text-cream placeholder:text-muted-foreground/60 focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold transition-colors"
+                  />
+                  <p className="mt-1 text-right font-sans text-xs text-cream/60">
+                    {giftMessage.length}/300
+                  </p>
+                </div>
+
+                <div className="text-center">
+                  <p className="font-serif text-xl text-gold mb-2">
+                    R$ {selectedGift.valor.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 flex gap-2">
+                <button
+                  onClick={handleGiftModalSubmit}
+                  disabled={!giftName.trim()}
+                  className="flex-1 px-6 py-3 rounded-lg bg-gold/20 border-2 border-gold text-gold font-sans text-sm uppercase tracking-[0.2em] hover:bg-gold/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Heart className="inline mr-2 h-4 w-4" />
+                  Presentear
+                </button>
+                <button
+                  onClick={() => setShowGiftModal(false)}
+                  className="px-6 py-3 rounded-lg border border-gold/30 text-cream/80 font-sans text-sm uppercase tracking-[0.2em] hover:bg-gold/10 transition-all"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Gravata Info Modal */}
         {showGravataModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
