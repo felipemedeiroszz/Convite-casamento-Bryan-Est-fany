@@ -202,26 +202,40 @@ export default function GiftsPage() {
   }
 
   const startPaymentPolling = (paymentId: string) => {
+    console.log('[POLLING] Starting payment status check for:', paymentId)
+
     const pollInterval = setInterval(async () => {
       try {
+        console.log('[POLLING] Checking payment status...')
         const response = await fetch(`/api/payments/${paymentId}/status`)
+        console.log('[POLLING] Response status:', response.status)
+
         if (response.ok) {
           const data = await response.json()
+          console.log('[POLLING] Payment status:', data.status)
+
           if (data.status === 'CONFIRMED') {
+            console.log('[POLLING] Payment confirmed!')
             setPaymentStatus('confirmed')
             clearInterval(pollInterval)
           } else if (data.status === 'CANCELLED' || data.status === 'EXPIRED') {
+            console.log('[POLLING] Payment cancelled/expired:', data.status)
             setPaymentStatus(data.status.toLowerCase() as PaymentStatus)
             clearInterval(pollInterval)
+          } else {
+            console.log('[POLLING] Payment still pending:', data.status)
           }
+        } else {
+          console.error('[POLLING] Error response:', response.status)
         }
       } catch (error) {
-        console.error('Polling error:', error)
+        console.error('[POLLING] Polling error:', error)
       }
     }, 5000) // Poll every 5 seconds
 
     // Stop polling after 5 minutes
     setTimeout(() => {
+      console.log('[POLLING] Stopping polling after 5 minutes')
       clearInterval(pollInterval)
     }, 300000)
   }

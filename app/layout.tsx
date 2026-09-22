@@ -42,6 +42,7 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="32x32" href="/LOGOBE.png" />
         <link rel="shortcut icon" type="image/png" href="/LOGOBE.png" />
         <link rel="apple-touch-icon" type="image/png" href="/LOGOBE.png" />
+        {/* Remove problematic preloads */}
       </head>
       <body className="antialiased font-sans">
         <Splash />

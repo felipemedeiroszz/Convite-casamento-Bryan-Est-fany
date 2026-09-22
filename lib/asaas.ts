@@ -396,7 +396,10 @@ export async function getPaymentStatus(
   paymentId: string
 ): Promise<AsaasPaymentResponse> {
 
+  console.log('[ASAAS] Checking payment status:', paymentId)
+
   if (USE_MOCK_PAYMENT || paymentId.startsWith('mock_')) {
+    console.log('[ASAAS] Using mock payment status')
     return {
       id: paymentId,
       status: 'PENDING',
@@ -411,6 +414,8 @@ export async function getPaymentStatus(
       'ASAAS_ACCESS_TOKEN não configurado no arquivo .env'
     )
   }
+
+  console.log('[ASAAS] Fetching payment status from:', `${ASAAS_API_URL}/payments/${paymentId}`)
 
   const response = await fetch(
     `${ASAAS_API_URL}/payments/${paymentId}`,
@@ -430,17 +435,20 @@ export async function getPaymentStatus(
   try {
     json = JSON.parse(text)
   } catch {
+    console.error('[ASAAS] Invalid JSON response:', text.substring(0, 200))
     throw new Error(
       `Resposta inválida do Asaas. HTTP ${response.status}`
     )
   }
 
   if (!response.ok) {
+    console.error('[ASAAS] API error:', json)
     throw new Error(
       `Asaas API error: ${JSON.stringify(json)}`
     )
   }
 
+  console.log('[ASAAS] Payment status retrieved:', json.status)
   return json
 }
 

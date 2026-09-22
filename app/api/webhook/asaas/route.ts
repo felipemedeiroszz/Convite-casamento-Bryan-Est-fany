@@ -7,15 +7,31 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.text()
     const signature = request.headers.get('asaas-signature') || ''
-    
+
+    console.log('[WEBHOOK] Received webhook:', {
+      hasSignature: !!signature,
+      hasBody: !!body,
+      bodyLength: body.length
+    })
+
     // Verify webhook signature
     const secret = process.env.ASAAS_WEBHOOK_SECRET
-    if (!secret || !verifyWebhookSignature(body, signature, secret)) {
+    if (!secret) {
+      console.error('[WEBHOOK] ASAAS_WEBHOOK_SECRET not configured')
+      // In development, allow webhooks without signature verification
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[WEBHOOK] Skipping signature verification in development')
+      } else {
+        return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 })
+      }
+    } else if (!verifyWebhookSignature(body, signature, secret)) {
+      console.error('[WEBHOOK] Invalid signature')
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
     const data: AsaasWebhookData = JSON.parse(body)
-    
+    console.log('[WEBHOOK] Event:', data.event, 'Payment ID:', data.payment.id, 'Status:', data.payment.status)
+
     // Connect to Supabase
     const cookieStore = await cookies()
     const supabase = createServerClient(
@@ -35,7 +51,9 @@ export async function POST(request: NextRequest) {
     )
 
     // Update payment status in database
-    if (data.event === 'PAYMENT_CONFIRMED') {
+    if (data.event === 'PAYMENT_CONFIRMED' || data.event === 'PAYMENT_RECEIVED') {
+      console.log('[WEBHOOK] Processing confirmed payment:', data.payment.id)
+
       const { data: payment, error: paymentError } = await supabase
         .from('payments')
         .update({
@@ -48,9 +66,11 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (paymentError) {
-        console.error('Error updating payment:', paymentError)
+        console.error('[WEBHOOK] Error updating payment:', paymentError)
         return NextResponse.json({ error: 'Database error' }, { status: 500 })
       }
+
+      console.log('[WEBHOOK] Payment updated successfully:', payment?.id)
 
       // If payment is linked to a gift, mark it as received
       if (payment) {
@@ -62,6 +82,7 @@ export async function POST(request: NextRequest) {
           .single()
 
         if (contribution && contribution.gifts) {
+          console.log('[WEBHOOK] Processing gift contribution:', contribution.gifts.nome)
           // Add to gifts_received table
           await supabase.from('gifts_received').insert({
             product_id: contribution.gift_id,
@@ -78,7 +99,9 @@ export async function POST(request: NextRequest) {
           await supabase.rpc('decrement_gift_quantity', {
             gift_id: contribution.gift_id
           })
+          console.log('[WEBHOOK] Gift quantity decremented')
         } else if (payment.tipo === 'gravata') {
+          console.log('[WEBHOOK] Processing gravata contribution')
           // Add gravata contribution to gifts_received
           await supabase.from('gifts_received').insert({
             product_id: payment.id,
@@ -94,7 +117,8 @@ export async function POST(request: NextRequest) {
       }
     } else if (data.event === 'PAYMENT_DELETED' || data.event === 'PAYMENT_OVERDUE' || data.event === 'PAYMENT_BANK_SLIP_CANCELLED') {
       const status = data.event === 'PAYMENT_OVERDUE' ? 'EXPIRED' : 'CANCELLED'
-      
+      console.log('[WEBHOOK] Processing cancelled payment:', data.payment.id, 'Status:', status)
+
       const { data: payment, error: paymentError } = await supabase
         .from('payments')
         .update({
@@ -107,7 +131,7 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (paymentError) {
-        console.error('Error updating payment:', paymentError)
+        console.error('[WEBHOOK] Error updating payment:', paymentError)
         return NextResponse.json({ error: 'Database error' }, { status: 500 })
       }
 
@@ -131,11 +155,13 @@ export async function POST(request: NextRequest) {
           .delete()
           .eq('payment_id', payment.id)
       }
+    } else {
+      console.log('[WEBHOOK] Unhandled event:', data.event)
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Webhook error:', error)
+    console.error('[WEBHOOK] Error:', error)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }

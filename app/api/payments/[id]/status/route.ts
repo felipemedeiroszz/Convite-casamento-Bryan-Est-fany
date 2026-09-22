@@ -36,27 +36,52 @@ export async function GET(
       .single()
 
     if (dbError || !payment) {
+      console.error('[PAYMENT STATUS] Payment not found:', paymentId, dbError)
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
     }
 
+    console.log('[PAYMENT STATUS] Current DB status:', payment.status, 'Asaas ID:', payment.asaas_payment_id)
+
     // Check if payment is already confirmed in database
     if (payment.status === 'CONFIRMED') {
+      console.log('[PAYMENT STATUS] Already confirmed in DB')
       return NextResponse.json({ status: 'CONFIRMED' })
     }
 
     // Get status from Asaas
     const asaasPayment = await getPaymentStatus(payment.asaas_payment_id)
+    console.log('[PAYMENT STATUS] Asaas status:', asaasPayment.status)
+
+    // Map Asaas status to our internal status
+    let mappedStatus = asaasPayment.status
+    if (asaasPayment.status === 'RECEIVED' || asaasPayment.status === 'CONFIRMED') {
+      mappedStatus = 'CONFIRMED'
+    } else if (asaasPayment.status === 'PENDING') {
+      mappedStatus = 'PENDING'
+    } else if (asaasPayment.status === 'OVERDUE') {
+      mappedStatus = 'EXPIRED'
+    } else if (asaasPayment.status === 'CANCELLED' || asaasPayment.status === 'DELETED') {
+      mappedStatus = 'CANCELLED'
+    }
+
+    console.log('[PAYMENT STATUS] Mapped status:', mappedStatus)
 
     // Update database with current status
-    await supabase
+    const { error: updateError } = await supabase
       .from('payments')
       .update({
-        status: asaasPayment.status,
+        status: mappedStatus,
         atualizado_em: new Date().toISOString(),
       })
       .eq('id', paymentId)
 
-    return NextResponse.json({ status: asaasPayment.status })
+    if (updateError) {
+      console.error('[PAYMENT STATUS] Error updating DB:', updateError)
+    } else {
+      console.log('[PAYMENT STATUS] Updated DB successfully')
+    }
+
+    return NextResponse.json({ status: mappedStatus })
   } catch (error) {
     console.error('Payment status check error:', error)
     return NextResponse.json(
