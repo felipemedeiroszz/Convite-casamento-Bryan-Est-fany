@@ -213,6 +213,13 @@ export default function AdminPage() {
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault()
     setProductError('')
+
+    // Validate minimum value (R$ 1.00 for testing)
+    if (newProduct.valor < 1) {
+      setProductError('O valor mínimo para presente é R$ 1,00')
+      return
+    }
+
     try {
       const response = await fetch('/api/gifts', {
         method: 'POST',
@@ -257,6 +264,13 @@ export default function AdminPage() {
       setProductError('Produto não selecionado ou ID inválido')
       return
     }
+
+    // Validate minimum value (R$ 1.00 for testing)
+    if (editProductForm.valor < 1) {
+      setProductError('O valor mínimo para presente é R$ 1,00')
+      return
+    }
+
     setProductError('')
     try {
       const response = await fetch(`/api/gifts/${editingProduct.id}`, {
@@ -1035,6 +1049,7 @@ export default function AdminPage() {
                           <input
                             type="number"
                             step="0.01"
+                            min="1"
                             required
                             value={newProduct.valor}
                             onChange={(e) => setNewProduct({ ...newProduct, valor: parseFloat(e.target.value) || 0 })}
@@ -1156,6 +1171,7 @@ export default function AdminPage() {
                           <input
                             type="number"
                             step="0.01"
+                            min="1"
                             required
                             value={editProductForm.valor}
                             onChange={(e) => setEditProductForm({ ...editProductForm, valor: parseFloat(e.target.value) || 0 })}

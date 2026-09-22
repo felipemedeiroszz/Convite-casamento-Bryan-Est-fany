@@ -56,6 +56,10 @@ export async function PATCH(
       if (isNaN(v)) {
         return NextResponse.json({ error: `Valor inválido: ${body.valor}` }, { status: 400 })
       }
+      // Minimum value for gifts is R$ 1.00 (for testing)
+      if (v < 1) {
+        return NextResponse.json({ error: 'O valor mínimo para presente é R$ 1,00' }, { status: 400 })
+      }
       allowedFields.valor = v
     }
     if (body.imagem_url !== undefined) allowedFields.imagem_url = body.imagem_url

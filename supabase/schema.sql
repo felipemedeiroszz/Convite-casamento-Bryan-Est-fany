@@ -154,12 +154,12 @@ create policy "Public update for companion_attendance" on companion_attendance f
 create policy "Public read access for gifts_received" on gifts_received for select using (true);
 create policy "Public insert for gifts_received" on gifts_received for insert with check (true);
 
--- Insert sample gifts
+-- Insert sample gifts (all values must be >= 5.00 for Asaas API compatibility)
 insert into gifts (nome, descricao, valor, ordem, quantidade_disponivel) values
   ('Lua de Mel', 'Ajude-nos a realizar nosso sonho de lua de mel', 500.00, 1, 5),
   ('Jantar Romântico', 'Um jantar especial para comemorar nosso amor', 300.00, 2, 10),
   ('Decoração Casa Nova', 'Para tornar nosso lar ainda mais especial', 200.00, 3, 15),
   ('Aparelho de Cozinha', 'Equipamentos para nossa nova vida juntos', 150.00, 4, 8),
   ('Livros e Cultura', 'Investimento em nosso crescimento conjunto', 100.00, 5, 20),
-  ('Valor Livre', 'Escolha o valor que deseja contribuir', 50.00, 6, 9999)
+  ('Valor Livre', 'Escolha o valor que deseja contribuir (mínimo R$ 5,00)', 50.00, 6, 9999)
 on conflict do nothing;

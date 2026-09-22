@@ -196,6 +196,16 @@ export async function createPixPayment(
   if (USE_MOCK_PAYMENT) {
     console.log('[MOCK PAYMENT] Criando pagamento:', data)
 
+    // Validate minimum values even in mock mode
+    const isGravata = !data.description.includes('Presente:')
+    const minValue = isGravata ? 20 : 1
+
+    if (data.value < minValue) {
+      throw new Error(
+        isGravata ? 'O valor mínimo para gravata é R$ 20,00' : 'O valor mínimo para presente é R$ 1,00'
+      )
+    }
+
     const mockPaymentId =
       `mock_${Date.now()}_${Math.random()
         .toString(36)

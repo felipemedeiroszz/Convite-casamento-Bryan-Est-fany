@@ -197,7 +197,7 @@ export default function GiftsPage() {
     if (amount >= 20) {
       await handlePixPayment(amount)
     } else {
-      alert('O valor mínimo é R$ 20,00')
+      alert('O valor mínimo para gravata é R$ 20,00')
     }
   }
 

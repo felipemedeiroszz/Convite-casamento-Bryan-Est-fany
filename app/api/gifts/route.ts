@@ -52,6 +52,14 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { nome, descricao, valor, imagem_url, quantidade_disponivel } = body
 
+    // Validate minimum value (R$ 1.00 for testing)
+    if (!valor || valor < 1) {
+      return NextResponse.json(
+        { error: 'O valor mínimo para presente é R$ 1,00' },
+        { status: 400 }
+      )
+    }
+
     const { data, error } = await supabase!
       .from('gifts')
       .insert({

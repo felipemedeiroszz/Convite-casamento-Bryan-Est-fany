@@ -23,6 +23,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // For gravata payments, minimum is R$ 20.00
+    // For gift payments, minimum is R$ 1.00 (for testing)
+    const isGravata = !giftId
+    const minValue = isGravata ? 20 : 1
+
+    if (valor < minValue) {
+      return NextResponse.json(
+        { error: isGravata ? 'O valor mínimo para gravata é R$ 20,00' : 'O valor mínimo para presente é R$ 1,00' },
+        { status: 400 }
+      )
+    }
+
     // ==========================================
     // SUPABASE
     // ==========================================
